@@ -1,0 +1,4 @@
+# All dotfiles/scripts in this rice are Linux-targeted. Force LF in the
+# repo to avoid CRLF line endings leaking in from Windows contributors
+# (which would break shell scripts and many parsers silently).
+* text=auto eol=lf

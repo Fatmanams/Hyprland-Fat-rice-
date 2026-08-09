@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Zed (rice handler)
+Comment=Open code files in Zed. Registered as default for python/c/c++/lua/java/rust/json by the rice's hyprland.conf via xdg-mime.
+Exec=zed %f
+Terminal=false
+Categories=Development;TextEditor;Utility;
+Icon=zed
+MimeType=text/x-python;text/x-python3;application/x-csrc;application/x-c++src;application/x-chdr;application/x-c++hdr;text/x-c;text/x-c++;text/x-lua;text/x-java-source;application/x-java;text/x-java;text/x-rust;application/rust;application/json;application/x-json;text/x-toml;application/x-toml;text/x-yaml;application/x-yaml;text/yaml;text/markdown;text/x-markdown;text/plain;application/x-shellscript;application/javascript;text/javascript;text/typescript;text/x-typescript;application/x-typescript;inode/directory;
+NoDisplay=true
+StartupNotify=true
+StartupWMClass=Zed

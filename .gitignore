@@ -1,0 +1,28 @@
+# Editor / IDE
+*.swp
+*.swo
+*~
+\#*\#
+.\#*
+
+# Local pacman cache and build artifacts leftover from manual testing
+*.pkg.tar.zst
+*.pkg.tar.xz
+*.log
+*.tar.gz
+*.tar.bz2
+*.tar.zst
+
+# pywal cache (machine-specific)
+.cache/
+
+# Locally-cloned AUR repos during script development
+build/
+build-aur/
+
+# Backups made by staged scripts (backup .config)
+.config-backup-*/
+
+# OS junk
+.DS_Store
+Thumbs.db

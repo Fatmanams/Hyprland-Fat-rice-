@@ -1,0 +1,22 @@
+/* eww.scss — colors sourced from pywal16 via the same ~/.cache/wal/colors.css
+ * the rest of the rice uses. eww compiles this to CSS at open time; if colors
+ * look wrong, run `wal -i ~/.config/hypr/wallpaper.jpg` then `eww reload`
+ * (or open the widget again).
+ */
+@import "../../.cache/wal/colors.css";
+
+* { all: unset; font-family: "JetBrainsMono Nerd Font"; font-size: 13px; }
+
+.bar {
+  background: @background;
+  border: 1px solid @color1;
+  border-radius: 8px;
+  padding: 0 12px;
+  margin: 0 8px;
+  color: @foreground;
+}
+
+.clock { color: @color2; font-weight: bold; }
+.cpu   { color: @color4; }
+.mem   { color: @color6; }
+.sep   { color: @color8; opacity: 0.6; }

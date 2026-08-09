@@ -1,0 +1,75 @@
+/* waybar style — pywal16-driven. Colors are CSS vars exported to
+ * ~/.cache/wal/colors.css by `wal -i <wallpaper>`. The @import below
+ * pulls them at runtime. If waybar renders with default colors, run
+ * `wal -i ~/.config/hypr/wallpaper.jpg` and restart waybar.
+ */
+@import "../../.cache/wal/colors.css";
+
+* {
+    font-family: "JetBrainsMono Nerd Font";
+    font-size: 13px;
+    font-weight: 500;
+    all: unset;
+}
+
+window#waybar {
+    background: @background;
+    color: @foreground;
+    border-bottom: 1px solid @color1;
+}
+
+#workspaces {
+    padding: 0 6px;
+}
+
+#workspaces button {
+    padding: 0 10px;
+    color: @foreground;
+    background: transparent;
+    border-radius: 0;
+}
+
+#workspaces button.focused,
+#workspaces button.active {
+    background: @color1;
+    color: @background;
+    font-weight: bold;
+}
+
+#workspaces button:hover {
+    background: @color4;
+    color: @background;
+}
+
+#window {
+    padding: 0 12px;
+    color: @color2;
+}
+
+#pulseaudio { padding: 0 10px; color: @color3; }
+#network    { padding: 0 10px; color: @color4; }
+#cpu        { padding: 0 10px; color: @color5; }
+#memory     { padding: 0 10px; color: @color6; }
+#battery    { padding: 0 10px; color: @color7; }
+#battery.warning  { color: @color3; }
+#battery.critical { color: @color1; font-weight: bold; }
+#battery.charging { color: @color2; }
+#clock       { padding: 0 12px; color: @foreground; font-weight: bold; }
+
+#tray {
+    padding: 0 8px;
+}
+
+#tray menu {
+    background: @background;
+    color: @foreground;
+    border: 1px solid @color1;
+}
+
+#tray menu:hover {
+    background: @color1;
+    color: @background;
+}
+
+#tray .passive { color: @foreground; opacity: 0.6; }
+#tray .needs-attention { color: @color1; }

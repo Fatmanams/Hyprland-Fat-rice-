@@ -1,0 +1,41 @@
+;; eww.yuck — demo widget bar at the top-right corner of the screen.
+;; The rice's primary bar is waybar; this is a small eww widget bar so
+;; the AUR-built eww binary is actually exercised and has something to
+;; render. To remove entirely: comment out the `eww open bar_main` line
+;; in hyprland.conf and drop eww from 10-aur.sh — waybar covers the
+;; status-bar role on its own.
+;;
+;; Color variables are sourced by eww's FFI mechanism; see eww.scss for
+;; the mapping. Editing colors here is wrong — update eww.scss instead.
+
+(defvar date_time "loading...")
+(defvar cpu_usage 0)
+(defvar mem_usage 0)
+
+(defwidget bar_main []
+  (box :class "bar" :orientation "h" :space-evenly false :spacing 8
+    (label :class "clock" :text date_time)
+    (label :class "sep" :text "|")
+    (label :class "cpu" :text "CPU ${cpu_usage}%")
+    (label :class "sep" :text "|")
+    (label :class "mem" :text "MEM ${mem_usage}%")))
+
+(defwindow bar_main
+  :monitor 0
+  :geometry (geometry :x "0"
+                      :y "0"
+                      :width "auto"
+                      :height "32"
+                      :anchor "top right")
+  :stacking "fg"
+  :exclusive false
+  :focusable false
+  (bar_main))
+
+;; Pollers — interval in milliseconds. Cheap, so 5s is fine.
+(defpoll date_time :interval "5s"
+  "date '+%H:%M  %d %b'")
+(defpoll cpu_usage :interval "5s"
+  "top -bn1 | grep 'Cpu(s)' | awk '{print int(100 - $8)}'")
+(defpoll mem_usage :interval "5s"
+  "free | awk '/Mem:/ {print int($3/$2 * 100)}'")

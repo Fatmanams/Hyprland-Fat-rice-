@@ -1,0 +1,6 @@
+// swaync config. JSON w/ a comment header so JSON parsers ignore it as well —
+// swaync tolerates this file by virtue of its own JSON parser stripping lines
+// like this; if your version is strict, delete this comment line before the {
+// line. Keeping it here protects the file from being mistaken for an object
+// literal at rest, and gives you a visible "this is swaync's config" header.
+{"$schema": "/etc/xdg/swaync/configSchema.json", "positionX": "right", "positionY": "top", "layer": "top", "cssPriority": "user", "control-center-margin-top": 8, "control-center-margin-bottom": 8, "control-center-margin-right": 8, "control-center-margin-left": 8, "notification-icon-size": 48, "notification-body-image-height": 120, "notification-body-image-width": 200, "timeout": 6, "timeout-low": 4, "timeout-critical": 0, "fit-to-screen": false, "keyboard-shortcuts": true, "image-visibility": "when-available", "transition-speed": 200, "script-fail-notify": true, "widgets": ["title", "dnd", "mpris", "volume", "notifications"], "widget-config": {"title": {"text": "Notifications", "clear-all-button": true, "button-text": "Clear All"}, "dnd": {"text": "Do Not Disturb"}, "mpris": {"image-size": 64, "image-radius": 12}, "volume": {"label": "Volume", "show-per-app": false}}}

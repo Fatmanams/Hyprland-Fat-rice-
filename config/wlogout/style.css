@@ -1,0 +1,41 @@
+/* wlogout style.css — pywal16-driven via @import. Buttons use Material
+ * Symbols Rounded (ships with ttf-nerd-fonts-symbols is NOT this font;
+ * this expects you to install Material Symbols Rounded separately, OR
+ * swap the icon glyphs below for ASCII). Default uses plain text labels
+ * so it works out of the box. If you want icons, install the font then
+ * replace the label text in `layout` with icon glyphs.
+ */
+@import "../../.cache/wal/colors.css";
+
+* {
+    font-family: "JetBrainsMono Nerd Font";
+    font-size: 14px;
+    color: @foreground;
+}
+
+window {
+    background: transparent;
+}
+
+button {
+    background: @background;
+    color: @foreground;
+    border: 1px solid @color4;
+    border-radius: 12px;
+    margin: 12px;
+    padding: 40px 32px;
+    text-shadow: none;
+}
+
+button label {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+button:focus,
+button:hover {
+    background: @color1;
+    color: @background;
+    border-color: @color2;
+    transition: all 200ms ease;
+}

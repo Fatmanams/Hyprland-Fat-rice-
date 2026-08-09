@@ -1,0 +1,4 @@
+// wlogout layout — JSON. The leading comment line is non-standard but
+// harmless; wlogout's JSON parser tolerates it. If your build is strict,
+// delete this comment line. File pickup path: ~/.config/wlogout/layout.
+{"layout": {"columns": 2, "rows": 3, "fields": [{"type": "button", "label": "Lock", "action": "hyprlock", "key": "l"}, {"type": "button", "label": "Logout", "action": "hyprctl dispatch exit", "key": "e"}, {"type": "button", "label": "Suspend", "action": "systemctl suspend", "key": "s"}, {"type": "button", "label": "Hibernate", "action": "systemctl hibernate", "key": "h"}, {"type": "button", "label": "Reboot", "action": "systemctl reboot", "key": "r"}, {"type": "button", "label": "Shutdown", "action": "systemctl poweroff", "key": "p"}]}}
