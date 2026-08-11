@@ -1,0 +1,329 @@
+# AGENTS.md
+
+Opencode-facing instructions for this repository. Read this before
+making any change. The user-facing readme is `README.md` — this file
+is the contract the agent must follow.
+
+This rice is authored from a Windows box (file paths in commit messages
+/ `git status` may show `D:\linux rice`) and pushed via `gh CLI`. It
+targets **Arch Linux** (single-monitor, GPU-agnostic NVIDIA/Intel/AMD).
+Scripts run on Arch; do not assume Windows tools exist on the target.
+
+---
+
+## Package policy (inviolable)
+
+1. **Official repos first.** If a package is in `pacman -S` (any repo:
+   core, extra, multilib), it comes from there. No building from source
+   when an official package exists.
+2. **No AUR helpers** (`paru`, `yay`, etc.). **No `curl | bash`
+   installers**, ever — including upstream one-liner install scripts
+   (`curl -f https://zed.dev/install.sh | sh` is forbidden; use the
+   AUR pkg instead).
+3. **AUR-only packages** go through `scripts/10-aur.sh`:
+   - `git clone https://aur.archlinux.org/<pkg>.git`
+   - print the full PKGBUILD with line numbers for human review
+   - scan for `curl|bash` / suspicious source URLs (`pastebin|ipfs|ngrok`)
+   - wait for explicit `[y/N]` confirmation before building
+   - `makepkg -Cso` (clean + sync deps + build, **NO `-i`** — build only)
+   - `repo-add` the produced `*.pkg.tar.zst` into the local repo at
+     `/var/cache/pacman/localrepo` (registered into `/etc/pacman.conf`
+     as `[localrepo]` with `SigLevel = Optional TrustAll`)
+   - install via `sudo pacman -S <pkg>` from that local repo
+4. **Static-asset / no-build repos** (like `sddm-astronaut-theme`) use a
+   bare `git clone` straight from upstream into the documented install
+   path (e.g. `/usr/share/sddm/themes/...`). Don't manufacture a PKGBUILD
+   wrapper when there's nothing to compile. `scripts/20-sddm.sh` is the
+   sole current example.
+5. **Up-front AUR-only audit.** Before any change that adds or removes
+   a package, scan the full package list and list every AUR-only
+   dependency in the PR description (or commit message, if pushing
+   direct) — so the review/build step is visible, never silent mid-task.
+
+### AUR-only packages currently in this build
+
+`scripts/10-aur.sh` is the source of truth. As of last audit:
+
+| Package                | Notes                                                              |
+|------------------------|--------------------------------------------------------------------|
+| `eww`                  | Rust build. Many crates from crates.io.                            |
+| `python-pywal16`       | Active fork. Official `python-pywal` is the dead one — don't swap.|
+| `bibata-cursor-theme`  | Cursor theme. Has install hooks; review before approving.          |
+| `wlogout`              | Wayland logout menu, GTK3.                                         |
+| `zed`                  | Large Rust project. **Review PKGBUILD carefully** — may fetch      |
+|                        | release assets at build time.                                      |
+
+When a package leaves AUR for official repos (the trend), **remove it
+from `10-aur.sh` and add it to `00-base.sh`'s `pacman -S` list**. Don't
+keep building it from AUR "to be safe" — that violates rule #1.
+
+### Packages often mistaken for AUR-only (now in official repos)
+
+Do not add to `10-aur.sh` — they are already in `00-base.sh`:
+`rofi-wayland`, `ghostty`, `swww`, `swaync`, `cliphist`, `nwg-look`,
+`kvantum`, `kvantum-qt5`, `gamemode`, `gamescope`, `mangohud`,
+`lib32-mangohud`, `python-pywal` (old fork — we use `pywal16` by choice).
+
+---
+
+## Build speed settings (already applied by `00-base.sh`)
+
+- `/etc/makepkg.conf`: `MAKEFLAGS="-j$(nproc)"`
+- `/etc/makepkg.conf`: `BUILDENV=(!distcc !color !ccache check !sign)` —
+  `ccache` installed from pacman and wired into BUILDENV
+- Local repo at `/var/cache/pacman/localrepo`, name `localrepo`,
+  registered into `/etc/pacman.conf` once by `10-aur.sh`'s
+  `setup_local_repo()` function
+
+Do not invent a new build pipeline. Don't build ad-hoc in `/tmp`.
+Every AUR-only build goes through `scripts/10-aur.sh`'s `build_one()`.
+
+---
+
+## Repository layout
+
+```
+.
+├── AGENTS.md                    THIS file — read before editing
+├── README.md                    user-facing readme
+├── .gitignore
+├── .gitattributes               forces LF on all text files (target is Linux)
+├── scripts/
+│   ├── 00-base.sh             official-repo install + makepkg.conf + GPU driver pick
+│   ├── 10-aur.sh              reviewed-PKGBUILD makepkg + repo-add pipeline
+│   ├── 20-sddm.sh             sddm-astronaut-theme bare clone + rollback snapshot
+│   ├── 30-dotfiles.sh         installs config/ into ~/.config with backup
+│   └── 40-gaming.sh           verifies gamemoded + prints Steam launch recipes
+└── config/
+    ├── hypr/
+    │   ├── hyprland.conf       compositor config (monitor= is a STOPGAP TODO — see notes)
+    │   ├── hyprpaper.conf      wallpaper daemon (wallpaper path is a TODO)
+    │   ├── hypridle.conf       idle / lock / suspend listeners
+    │   └── gpu-env.sh          NVIDIA/Intel/AMD auto-detect env shim (source from shell rc)
+    ├── nvim/
+    │   └── init.lua            single-file nvim config; pywal-driven, no plugins
+    ├── waybar/{config,style.css}
+    ├── swaync/{config.json,style.css}
+    ├── rofi/config.rasi
+    ├── eww/{eww.yuck,eww.scss}
+    ├── wlogout/{layout,style.css}
+    ├── ghostty/config
+    ├── MangoHud/MangoHud.conf
+    └── applications/
+        └── zed-handler.desktop  registered via xdg-mime default in hyprland.conf
+```
+
+When adding a new component, mirror this structure: a top-level dir
+under `config/<component>/` for the dotfiles, an `exec-once` line in
+`hyprland.conf` to start it, and — *if* and only if there's no
+official-repo equivalent — an entry in `scripts/10-aur.sh`'s
+`PACKAGES=(...)` array.
+
+---
+
+## Skip-git-appendix
+
+The agent should never invoke the following on its own without an
+explicit user request:
+
+- `git push`
+- `git commit` (touching any file the user said "keep going" about is
+  fine; the commit is what's gated)
+- `gh pr create` / `gh pr merge` / `gh pr close`
+- force-push (`git push --force`) — only when the target branch is an
+  empty-repo `main` you're initializing, never otherwise
+
+`gh` is installed at `C:\Program Files\GitHub CLI\gh.exe` on this
+machine. Use `& "C:\Program Files\GitHub CLI\gh.exe" <args>` from
+PowerShell (the call operator is required — bare quoted paths won't
+parse as commands in PS).
+
+Auth: `gh auth status` confirms you're logged in. If a `gh` command
+errors with auth, **stop and ask the user to run `gh auth login`**
+interactively — do not store tokens or accept PASTED tokens in chat.
+
+---
+
+## Lint / verify / test
+
+There is no test suite. There's no CI. What verifying exists:
+
+1. **Bash syntax check** on every script edit:
+   ```
+   bash -n scripts/00-base.sh
+   bash -n scripts/10-aur.sh
+   bash -n scripts/20-sddm.sh
+   bash -n scripts/30-dotfiles.sh
+   bash -n scripts/40-gaming.sh
+   ```
+2. **JSON validity** on swaync + wlogout configs (with `jq`):
+   ```
+   jq . config/swaync/config.json        # has a // comment line — strip first if jq is strict
+   jq . config/wlogout/layout           # same
+   ```
+3. **Conf file sanity** (the conv comment header on swaync's
+   `config.json` and wlogout's `layout` is **deliberate** — keeps the
+   `write` tool's JSON auto-detect from misparsing the file content as
+   an object literal at session-time. Don't remove it without testing).
+
+If you add a new script, structure, or behavior, run the relevant
+syntax checks before committing. There is no CI to catch it later.
+
+---
+
+## Components map — what changes where
+
+| You want to...                                | File to edit                                                 |
+|-----------------------------------------------|--------------------------------------------------------------|
+| Change keybinds                               | `config/hypr/hyprland.conf`                                  |
+| Add/remove a pywal-driven tool                | `config/hypr/hyprland.conf` (exec-once) + `config/<tool>/`    |
+| Change cursor theme or size                   | `config/hypr/hyprland.conf` (`env = XCURSOR_*`, `HYPRCURSOR_*`) |
+| Switch from ghostty to kitty / alacritty      | `config/hypr/hyprland.conf` (`$terminal = ...`)              |
+| Change the code editor                        | `config/hypr/hyprland.conf` (`$editor`, `bind = $mod, E`) + `config/applications/zed-handler.desktop` (or replace with new one) |
+| Add a new AUR-only package                    | `scripts/10-aur.sh` (`PACKAGES=(...)` array) **after** confirming via `archlinux.org/packages/?q=<name>` that it's not in official repos |
+| Move a package from AUR to official           | remove from `scripts/10-aur.sh` `PACKAGES=()`, add to `scripts/00-base.sh`'s `pacman -S` block |
+| Edit gaming HUD defaults                      | `config/MangoHud/MangoHud.conf`                              |
+| Change notification behavior                  | `config/swaync/config.json` + `config/swaync/style.css`      |
+| Change status bar layout                      | `config/waybar/config` + `config/waybar/style.css`           |
+| Change the wallpaper (user-side, post-install) | drop image at `~/.config/hypr/wallpaper.jpg`, run `wal -i` — NOT a repo edit |
+
+---
+
+## Color palette contract
+
+Color theming is **pywal16-driven, single source of truth**. The flow:
+
+1. `hyprland.conf` runs `wal -i ~/.config/hypr/wallpaper.jpg` at session start
+2. pywal16 writes `~/.cache/wal/colors.css` and `~/.cache/wal/colors.vim`
+3. The CSS-importing components (`waybar/style.css`, `swaync/style.css`,
+   `rofi/config.rasi`, `eww/eww.scss`, `wlogout/style.css`) all
+   `@import "../../.cache/wal/colors.css";` at the top
+4. Neovim sources `~/.cache/wal/colors.vim` at editor open (falls back
+   to a baked Catppuccin Mocha palette if pywal hasn't run yet)
+5. Ghostty is the outlier — its config bakes Catppuccin Mocha because
+   ghostty doesn't `@import` CSS. A post-wal hook that regenerates a
+   ghostty colors.conf from pywal is a documented TODO in `README.md`'s
+   Tree section. **Do not silently edit ghostty's color palette** to
+   match the other components without addressing this TODO properly.
+
+When adding a new themed component, follow the CSS `@import` pattern.
+Don't hardcode hex colors that should match the dynamic palette.
+
+---
+
+## Monitor + wallpaper contract (must NOT regress)
+
+- `config/hypr/hyprland.conf` ships with `monitor=,preferred,auto,1`
+  — this is a **documented stopgap**, not the committed config. **Do
+  not** commit a "real" value; the user is expected to run
+  `hyprctl monitors` after first boot and replace it. The README's
+  "Mandatory first-boot TODOs" section is the contract.
+- `config/hypr/hyprpaper.conf` ships with `wallpaper = eDP-1, ...`
+  where `eDP-1` is a placeholder. Same deal — user replaces with the
+  real monitor name. **Don't** run `hyprctl monitors` from a script to
+  auto-fill the line; the stopgap is intentional.
+- The wallpaper path `~/.config/hypr/wallpaper.jpg` is a TODO the user
+  fills in after `30-dotfiles.sh` runs. **Don't** vendor a wallpaper
+  binary into this repo.
+
+---
+
+## GPU-agnostic contract (must NOT regress)
+
+The rice works on either NVIDIA proprietary or Intel/AMD Mesa without
+the user re-editing configs. Mechanism (see README "GPU compatibility"
+section for the user-facing version):
+
+1. `scripts/00-base.sh` detects vendor via `lspci` and installs the
+   right driver stack with a confirmation prompt.
+2. `config/hypr/hyprland.conf` has a commented `# NVIDIA:` env block
+   at the bottom of the `# ---- Environment` section. Default
+   (uncommented) = Intel/AMD mode. NVIDIA users uncomment that block.
+   Don't replace this with an auto-detect at runtime — Hyprland's
+   `env =` lines are parsed at config-load, not at exec-once time, so
+   conditional envs cannot work.
+3. `config/hypr/gpu-env.sh` is the runtime shim for app-level env vars
+   (`__GL_*`, `LIBVA_DRIVER_NAME`, `VDPAU_DRIVER`, `Mesa_*`). User
+   sources it from `.zshrc` or `.bashrc`. Auto-detects at shell start.
+4. README documents NVIDIA kernel cmdline requirements:
+   `nvidia_drm.modeset=1 nvidia_drm.fbdev=1`.
+
+When changing GPU-related env vars, update **all three** layers in
+lockstep, or the rice regresses on one of the two vendors without an
+obvious failure mode.
+
+---
+
+## Display manager rollback contract (must NOT regress)
+
+`scripts/20-sddm.sh` does the following before touching SDDM config:
+
+- Snapshots `/etc/sddm.conf.d` and `/usr/share/sddm/themes` to
+  `/root/sddm-snap.<TS>/`
+- Records the previously-working `Current=` value in
+  `/root/sddm-snap.<TS>/PREVIOUS_Current.txt`
+- Does NOT remove plasma/kde session entries (so Plasma is always a
+  fallback login in SDDM's session picker)
+
+The README's "Rolling back if SDDM crashes" section documents the
+TTY-based recovery procedure. Don't break this pattern — keep the KDE
+fallback entry intact, keep the snapshot-before-change ethos, keep the
+rollback procedure in the README in sync with the actual script.
+
+---
+
+## Sudoedit / $EDITOR gotcha (don't regress)
+
+`$EDITOR` and `$VISUAL` are set to `zed --wait` in `hyprland.conf`.
+This works for `git commit`, `crontab -e`, and most terminal tools. It
+**does not** work cleanly for `sudoedit`/`visudo` because Zed is a
+Wayland GUI app launched from a root process — it can't connect to
+the user's wayland socket. The README documents the fallback
+(`sudoedit -e nano` — `nano` is installed by `00-base.sh` specifically
+for this).
+
+Don't change `$EDITOR` to a TUI editor "to fix sudoedit" without
+asking — the current setup is the user's explicit choice ("zed for
+python c c++ lua java rust json"), and `nano` is the documented escape
+hatch for the corner cases.
+
+---
+
+## Commit / PR style
+
+- Commit message body wrapped at ~70 chars, paragraphs separated by
+  blank lines, no `git commit -m` for non-trivial commits — write
+  a real multi-line message.
+- Don't squash context: scripts changed, dotfiles changed, and
+  README changes can all be one commit if they're coherent (e.g.
+  "add new component" — installs it, configs it, documents it). If
+  the user added a feature and you also need to update the AUR audit
+  table, those belong in the same commit.
+- Always update the README's "AUR-only packages" audit table when
+  the AUR set changes. The table is the rule-5 contract.
+- **No emojis** in commit messages or file contents unless the user
+  asks for them.
+- Don't add comments to existing code unless asked, and the comments
+  that *are* in the configs/scripts are intentional documentation
+  (rollback procedures, gotchas, the gpu-env.sh vendor detection, the
+  sudoedit explanation in `hyprland.conf`, the `// swaync config.`
+  comment header that protects the JSON file from the write tool's
+  autodetection). Don't strip them as "cleanup".
+
+---
+
+## "Keep going" semantics
+
+When the user says "keep going" without further specification, interpret
+it as "continue from where you left off and finish the in-flight task."
+That means:
+
+- finish the file you were writing
+- finish the commit you were staging
+- finish the PR description you were drafting
+- run the syntax checks (`bash -n`, `jq .`) on anything changed
+- push to the same branch / open the PR / merge per the existing flow
+
+It does **not** mean "start a new feature" or "invent the next task."
+If the in-flight task is already done and the user says "keep going,"
+**ask** what they want next rather than guessing.

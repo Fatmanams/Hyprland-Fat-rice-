@@ -27,10 +27,10 @@ gpu_vendor() {
     local line
     line=$(lspci -nn | grep -Ei ' VGA compatible controller: ' | head -n1)
     case "$line" in
-        *NVIDIA*) echo nvidia ;;
-        *Advanced Micro Devices*) echo amd ;;
-        *Intel*) echo intel ;;
-        *) echo unknown ;;
+        *NVIDIA*)                       echo nvidia ;;
+        *"Advanced Micro Devices"*)     echo amd   ;;
+        *Intel*)                         echo intel ;;
+        *)                               echo unknown ;;
     esac
 }
 
