@@ -60,7 +60,7 @@ sudo pacman -S --needed --noconfirm \
     grim slurp wl-clipboard \
     wlsunset \
     ghostty kitty alacritty \
-    nano \
+    nano neovim \
     polkit polkit-gnome polkit-kde-agent gnome-keyring seahorse \
     NetworkManager \
     pipewire wireplumber \
@@ -70,10 +70,42 @@ sudo pacman -S --needed --noconfirm \
     jq curl wget git base-devel \
     gcc clang make cmake meson ninja pkgconf \
     imagemagick ffmpeg \
+    pciutils mesa-demos \
     hicolor-icon-theme adwaita-icon-theme sound-theme-freedesktop \
     gamemode gamescope mangohud lib32-mangohud \
     nwg-look kvantum kvantum-qt5 \
     swww cliphist \
     kvantum-qt6
+
+echo "==> [3.5/4] GPU driver layer (NVIDIA or Intel/AMD — pick one)"
+GPU_CHOSEN=0
+CURRENT_GPU=$(lspci -nn 2>/dev/null | grep -Ei ' VGA compatible controller: ' | head -n1)
+echo "    Detected GPU line: ${CURRENT_GPU:-unknown}"
+
+if echo "$CURRENT_GPU" | grep -qi 'nvidia'; then
+    echo "    Looks NVIDIA. Will install: nvidia nvidia-utils lib32-nvidia-utils"
+    echo "    (If that's wrong, Ctrl-C now, then re-run and pick manually.)"
+    read -r -p "    Proceed with NVIDIA drivers? [Y/n] " yn
+    if [[ "$yn" =~ ^[Nn]$ ]]; then
+        GPU_CHOSEN=0
+    else
+        sudo pacman -S --needed --noconfirm nvidia nvidia-utils
+        sudo pacman -S --needed --noconfirm --overwrite '/usr/lib32/libGL*' lib32-nvidia-utils
+        GPU_CHOSEN=1
+        echo "    NVIDIA installed. Make sure kernel cmdline has:"
+        echo "      nvidia_drm.modeset=1 nvidia_drm.fbdev=1"
+        echo "    (grub: /etc/default/grub -> GRUB_CMDLINE_LINUX_DEFAULT -> update-grub; systemd-boot: /etc/kernel/cmdline -> reinstall linux-lts)"
+    fi
+fi
+
+if [[ $GPU_CHOSEN -eq 0 ]]; then
+    echo "    Installing Intel/AMD open stack (works on both):"
+    sudo pacman -S --needed --noconfirm \
+        mesa lib32-mesa \
+        vulkan-radeon lib32-vulkan-radeon \
+        vulkan-intel lib32-vulkan-intel \
+        intel-media-driver libva-mesa-driver mesa-vdpau \
+        vulkan-mesa-layers lib32-vulkan-mesa-layers
+fi
 
 echo "==> DONE. Next: ./10-aur.sh"

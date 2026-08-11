@@ -25,6 +25,7 @@ exactly. No AUR helpers (paru/yay), no `curl | bash` installers.
 | Logout menu      | wlogout              | **AUR — makepkg'd**     |       |
 | Terminal         | ghostty              | pacman (extra)          |       |
 | Code editor      | zed                  | **AUR — makepkg'd**     | primary $EDITOR + $CODE for python/c/c++/lua/java/rust/json |
+| Quick editor     | neovim              | pacman (extra)          | terminal edits, pywal-driven, no plugins |
 | Display manager  | sddm                 | pacman (extra)          |       |
 | SDDM theme       | sddm-astronaut-theme | **bare git clone**      | rule #4: no build step, cloned straight into /usr/share/sddm/themes |
 | GTK theming GUI  | nwg-look             | pacman (extra)          |       |
@@ -64,7 +65,83 @@ repos** — these are installed by `scripts/00-base.sh`, **not** built:
 
 ---
 
-## Installation order
+## GPU compatibility (NVIDIA + Intel + AMD, same config)
+
+The rice ships **one** `hyprland.conf` that works on either vendor with
+a single commented/uncommented block. Default (no edits) = Intel/AMD.
+
+### Vendor detection
+
+`scripts/00-base.sh` runs `lspci` to detect your GPU and installs the
+right driver stack with a single confirmation prompt:
+
+- **NVIDIA**: `nvidia`, `nvidia-utils`, `lib32-nvidia-utils` from `extra`/`multilib`
+- **Intel/AMD**: `mesa`, `vulkan-radeon`, `vulkan-intel`, `intel-media-driver`,
+  `libva-mesa-driver`, and the multilib (lib32-) siblings. No vendor-blob packages.
+
+Either path keeps `mesa` itself installed (libGL/GLX/EGL remains sane).
+
+### Vendor-specific env vars
+
+Two layers:
+
+1. **Hyprland-compositor env** in `config/hypr/hyprland.conf` — bottom of
+   the `# ---- Environment` block. NVIDIA users uncomment every line
+   marked `# NVIDIA:`. Intel/AMD users leave them commented. These are
+   `env =` directives parsed by the compositor at config-load time, so
+   they cannot be set conditionally at runtime — pick once.
+
+2. **App-level env** in `config/hypr/gpu-env.sh`. Source from your `.zshrc`
+   or `.bashrc`:
+   ```bash
+   # ~/.zshrc or ~/.bashrc
+   if [ -f ~/.config/hypr/gpu-env.sh ]; then
+       . ~/.config/hypr/gpu-env.sh
+   fi
+   ```
+   Auto-detects the GPU via `lspci` at shell start and exports the
+   `__GL_THREADED_OPTIMIZATIONS`, `LIBVA_DRIVER_NAME`, `VDPAU_DRIVER`,
+   `Mesa_*` overrides appropriate to that vendor. Games launched from
+   Steam / Proton / CLI inherit these.
+
+### NVIDIA-specific gotchas (read once if you're on NVIDIA)
+
+1. **Kernel cmdline** — required for modeset-on-boot:
+   ```
+   nvidia_drm.modeset=1 nvidia_drm.fbdev=1
+   ```
+   For systemd-boot: edit `/etc/kernel/cmdline` (or `/boot/loader/entries/*.conf`)
+   and reinstall `linux` (`sudo pacman -S linux`) so the cmdline is regenerated
+   into the new EFI entry. For GRUB: edit `/etc/default/grub` -> `GRUB_CMDLINE_LINUX_DEFAULT`
+   and run `grub-mkconfig -o /boot/grub/grub.cfg`.
+
+2. **Hyprland config — uncomment the NVIDIA env block** in
+   `~/.config/hypr/hyprland.conf`. The defaults shipped work on Intel/AMD;
+   on NVIDIA the `WLR_NO_HARDWARE_CURSORS=1` line is the difference between
+   a glitchy or invisible cursor (without) and a normal one (with).
+
+3. **Don't install `nvidia-dkms` alongside `linux`** — pick one. `nvidia`
+   works with stock `linux`. Use `nvidia-dkms` only if you're on `linux-zen`,
+   `linux-lts`, or a custom kernel. `00-base.sh` installs the `nvidia`
+   package by default; if you're on a non-stock kernel, install `nvidia-dkms`
+   yourself.
+
+4. **Wayland + NVIDIA NVK (Vulkan)** — recent `nvidia` packages ship NVK so
+   `vulkan-nvidia` from the binary blob shouldn't be installed separately;
+   `nvidia-utils` covers the userland GL stack. You don't need
+   `vulkan-mesa-layers` either (Mesa's layers don't help on NVIDIA).
+
+### Before any debugging "Hyprland is laggy on NVIDIA"
+
+1. Did you set `nvidia_drm.modeset=1` on the cmdline? Verify with
+   `cat /sys/module/nvidia_drm/parameters/modeset` — must print `Y`.
+2. Did you uncomment the NVIDIA env block in `hyprland.conf`?
+3. Is `nvidia-dkms` matching your kernel's package? `uname -r` vs `pacman -Q linux`.
+4. Restart SDDM (`sudo systemctl restart sddm`), not just Hyprland.
+
+---
+
+
 
 Run the staged scripts in order. **Read each one before running.** None
 are silent; AUR builds explicitly pause and print the PKGBUILD for your
@@ -177,14 +254,25 @@ working GUI to investigate from.
 
 ---
 
-## Code editor setup (Zed)
+## Code editor setup (Zed, Neovim, Ghostty)
 
-Per your ask, Zed is the default editor for `python`, `c`, `c++`, `lua`,
-`java`, `rust`, and `json` files. `hyprland.conf` runs `xdg-mime default`
-at session start against the `zed-handler.desktop` file copied by
-`30-dotfiles.sh` into `~/.local/share/applications/`. The handler also
-covers adjacent types (C headers, JavaScript, TOML, YAML, markdown,
-shell, plaintext).
+Per your ask, **Zed** is the default editor for `python`, `c`, `c++`,
+`lua`, `java`, `rust`, and `json` files. `hyprland.conf` runs
+`xdg-mime default` at session start against the `zed-handler.desktop`
+file copied by `30-dotfiles.sh` into `~/.local/share/applications/`.
+The handler also covers adjacent types (C headers, JavaScript, TOML,
+YAML, markdown, shell, plaintext).
+
+**Neovim** is configured at `~/.config/nvim/init.lua` — single-file,
+no plugin manager, pywal-driven colors (matches the rest of the rice).
+Use it for terminal-side edits where you want syntax-aware highlighting
+without popping a GUI window: script hacks, dockerfile edits, quick
+patches. It's not your IDE — Zed is.
+
+**Ghostty** is the primary terminal. Its config at
+`~/.config/ghostty/config` bakes Catppuccin Mocha as a fallback palette
+(pywal16 doesn't yet write a ghostty-compatible config file; see the
+file header comment for the TODO).
 
 Bindings:
 
@@ -315,7 +403,10 @@ linux-rice/
     ├── hypr/
     │   ├── hyprland.conf                   compositor config (monitor= TODO!)
     │   ├── hyprpaper.conf                  wallpaper daemon (wallpaper TODO!)
-    │   └── hypridle.conf                   idle / lock / suspend listeners
+    │   ├── hypridle.conf                   idle / lock / suspend listeners
+    │   └── gpu-env.sh                      NVIDIA/Intel/AMD auto-detect env vars (source from shell rc)
+    ├── nvim/
+    │   └── init.lua                         single-file nvim config; pywal-driven, no plugins
     ├── waybar/
     │   ├── config                          top bar layout
     │   └── style.css                       pywal16 @import colors
