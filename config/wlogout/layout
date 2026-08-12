@@ -1,4 +1,52 @@
-// wlogout layout — JSON. The leading comment line is non-standard but
-// harmless; wlogout's JSON parser tolerates it. If your build is strict,
-// delete this comment line. File pickup path: ~/.config/wlogout/layout.
-{"layout": {"columns": 2, "rows": 3, "fields": [{"type": "button", "label": "Lock", "action": "hyprlock", "key": "l"}, {"type": "button", "label": "Logout", "action": "hyprctl dispatch exit", "key": "e"}, {"type": "button", "label": "Suspend", "action": "systemctl suspend", "key": "s"}, {"type": "button", "label": "Hibernate", "action": "systemctl hibernate", "key": "h"}, {"type": "button", "label": "Reboot", "action": "systemctl reboot", "key": "r"}, {"type": "button", "label": "Shutdown", "action": "systemctl poweroff", "key": "p"}]}}
+// wlogout layout — proper format per wlogout(5) / upstream README at
+// https://github.com/ArtsyMacaw/wlogout : one JSON object per button,
+// concatenated (NO outer array or wrapper, NO commas between objects).
+// Required keys: label, action, text, keybind.
+//
+// `label` is also the CSS selector used by style.css — so any button
+// labelled e.g. "lock" can be targeted as `#lock` in the stylesheet.
+// If you change a label here, update style.css selectors to match.
+// style.css as shipped uses generic `button` selectors (not #label),
+// so any labels work without style.css edits — but if you specialize
+// styling per button, the convention is `#<label>` in CSS.
+//
+// Actions use upstream defaults (loginctl lock-session etc.) rather
+// than hyprctl dispatch so wlogout stays portable to Sway/i3 later.
+// These work identically under Hyprland (loginctl terminate-user $USER
+// ends the user's systemd session, which Hyprland respects).
+{
+    "label" : "lock",
+    "action" : "loginctl lock-session",
+    "text" : "Lock",
+    "keybind" : "l"
+}
+{
+    "label" : "logout",
+    "action" : "loginctl terminate-user $USER",
+    "text" : "Logout",
+    "keybind" : "e"
+}
+{
+    "label" : "suspend",
+    "action" : "systemctl suspend",
+    "text" : "Suspend",
+    "keybind" : "s"
+}
+{
+    "label" : "hibernate",
+    "action" : "systemctl hibernate",
+    "text" : "Hibernate",
+    "keybind" : "h"
+}
+{
+    "label" : "reboot",
+    "action" : "systemctl reboot",
+    "text" : "Reboot",
+    "keybind" : "r"
+}
+{
+    "label" : "shutdown",
+    "action" : "systemctl poweroff",
+    "text" : "Shutdown",
+    "keybind" : "p"
+}

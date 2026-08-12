@@ -60,6 +60,7 @@ sudo pacman -S --needed --noconfirm \
     grim slurp wl-clipboard \
     wlsunset \
     ghostty kitty alacritty \
+    zsh \
     nano neovim \
     polkit polkit-gnome polkit-kde-agent gnome-keyring seahorse \
     NetworkManager \
@@ -71,11 +72,15 @@ sudo pacman -S --needed --noconfirm \
     gcc clang make cmake meson ninja pkgconf \
     imagemagick ffmpeg \
     pciutils mesa-demos \
-    hicolor-icon-theme adwaita-icon-theme sound-theme-freedesktop \
+    hicolor-icon-theme adwaita-icon-theme papirus-icon-theme sound-theme-freedesktop \
     gamemode gamescope mangohud lib32-mangohud \
     nwg-look kvantum kvantum-qt5 \
     swww cliphist \
-    kvantum-qt6
+    ripgrep fd zoxide chafa \
+    poppler \
+    yazi thunar tumbler thunar-archive-plugin thunar-volman gvfs \
+    vlc \
+    kde-cli-tools
 
 echo "==> [3.5/4] GPU driver layer (NVIDIA or Intel/AMD — pick one)"
 GPU_CHOSEN=0

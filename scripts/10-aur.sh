@@ -3,9 +3,18 @@
 #   * Pull each AUR repo by git clone (no AUR helper).
 #   * Print the full PKGBUILD to stdout for human review (read it!).
 #   * Wait for explicit confirmation before building.
-#   * Build with plain `makepkg -Cso` (clean + syncdeps + build, NO -i).
+#   * Build with plain `makepkg -Cs` (clean + syncdeps + build, NO -i).
+#
+#     NOTE: do NOT use `makepkg -Cso`. The `-o` / `--nobuild` flag means
+#     "Download and extract files, run prepare(), but do NOT build them"
+#     per makepkg(8). With `-o`, no .pkg.tar.zst is produced, and under
+#     `set -euo pipefail` build_one() dies after extraction. `-s` alone
+#     is sufficient for sync-deps + build.
 #   * Add the resulting .pkg.tar.zst to the local repo with repo-add.
-#   * Install via `sudo pacman -U` from that local repo.
+#   * Install via `sudo pacman -S <pkgname>` from that local repo
+#     (NOT `pacman -U` — `-S` resolves from the [localrepo] section
+#     registered in /etc/pacman.conf, which keeps dependency tracking
+#     honest; `-U` would short-circuit that).
 #
 # AUR-only packages in this build (per the rule-5 up-front audit):
 #
@@ -14,12 +23,18 @@
 #     bibata-cursor-theme    https://aur.archlinux.org/bibata-cursor-theme.git
 #     wlogout                https://aur.archlinux.org/wlogout.git
 #     zed                    https://aur.archlinux.org/zed.git
+#     brave-bin              https://aur.archlinux.org/brave-bin.git
 #
 #     (Zed is NATIVE AUR-only — no curl|bash installer, no official repo —
 #     so per the policy it goes through this same reviewed-makepkg pipeline.
 #     Review the zed PKGBUILD carefully before approving: it's a Rust project
 #     that fetches many Cargo crates from crates.io and may download extra
 #     assets at build time. Look at all source=() entries.)
+#
+#     (brave-bin: precompiled Brave browser in .deb form, repackaged to
+#     .pkg.tar.zst. The PKGBUILD downloads from Brave's CDN at build time
+#     and unwraps the upstream .deb — that is NOT curl|bash, it's
+#     downloading a signed binary distribution. Read the PKGBUILD anyway.)
 #
 #
 # Items your original policy listed as AUR-only but which are now in
@@ -138,8 +153,8 @@ build_one() {
         return 0
     fi
 
-    # Build only (clean + sync deps + build, no install).
-    makepkg -Cso --noconfirm
+    # Build with clean + sync-deps (NO -o: -o means "no build", see makepkg(8)).
+    makepkg -Cs --noconfirm
 
     # Add produced packages to the local repo, then pacman-install from there.
     shopt -s nullglob
@@ -168,6 +183,7 @@ PACKAGES=(
     bibata-cursor-theme
     wlogout
     zed
+    brave-bin
 )
 
 for p in "${PACKAGES[@]}"; do

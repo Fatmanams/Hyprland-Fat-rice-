@@ -72,25 +72,34 @@ vim.filetype.add({
   },
 })
 
--- ---- Try pywal16 colors first; fall back to built-in scheme ----------------
--- pywal writes ~/.cache/wal/colors.vim on every run when invoked with the
--- right flag (`wal -i <image>`), and also colors.json (machine-readable).
--- The .vim file is a runtime/colors/matrx-style colorscheme; if missing,
--- we drop back to a Catppuccin-Mocha-like set baked here.
+-- ---- Try pywal16 colors first; fall back to built-in palette --------------
+-- pywal16 ships a template at pywal/templates/colors-wal.vim that, when
+-- rendered by `wal -i <wallpaper>`, writes ~/.cache/wal/colors-wal.vim.
+-- (Note the filename: "colors-wal.vim", NOT "colors.vim" — earlier
+-- versions of this file used the wrong path.)
+--
+-- The template DOES NOT define a colorscheme named "pywal" or any other
+-- name — it has no `g:colors_name` registration, no `highlight` calls.
+-- It just defines `color0..15`, `background`, `foreground`, `cursor`
+-- vim variables. So calling `colorscheme pywal` (as earlier code did)
+-- would fail with E185 "Cannot find color scheme". Instead, we source
+-- the file and use the variables it defines to drive our own
+-- `nvim_set_hl` calls below — same code path as the fallback, just with
+-- a different palette table. (Verified against pywal16 upstream at
+-- https://github.com/eylles/pywal16/blob/master/pywal/templates/colors-wal.vim)
 
-local wal_vim_path = vim.fn.expand("~/.cache/wal/colors.vim")
+local wal_vim_path = vim.fn.expand("~/.cache/wal/colors-wal.vim")
 local wal_enabled = false
 
 if vim.fn.filereadable(wal_vim_path) == 1 then
-  -- pywal16's colors.vim defines a `pywal` colorscheme that uses the
-  -- cached palette. Sourceing it makes `colorscheme pywal` available.
   vim.cmd("source " .. wal_vim_path)
   wal_enabled = true
 end
 
 -- Baked fallback palette (Catppuccin Mocha approximation) used as the
--- terminal-color and highlight basis when wal hasn't run yet, so that
--- cold-first-boot render still looks coherent.
+-- highlight basis when wal hasn't run yet, so cold-first-boot render is
+-- still coherent. When pywal HAS run, we use the sourced `color0..15`
+-- vim variables instead — see the palette switch below.
 local mocha = {
   bg        = "#1e1e2e",
   bg_alt    = "#181825",
@@ -106,46 +115,74 @@ local mocha = {
   border    = "#313244",
 }
 
+-- Pick which palette to drive highlights from.
+-- pywal16's colors-wal.vim defines: background, foreground, cursor, color0..15.
+local P
 if wal_enabled then
-  vim.cmd("colorscheme pywal")
+  -- Map pywal's color0..15 onto the slots our highlight table uses.
+  -- color0  = bg-alt-ish (often near-black)
+  -- color1  = red
+  -- color2  = green
+  -- color3  = yellow
+  -- color4  = blue
+  -- color5  = magenta
+  -- color6  = cyan
+  -- color7  = fg-light
+  -- color8  = comment/dim
+  -- color9..15 = bright variants of 1..7
+  P = {
+    bg        = vim.g.background or mocha.bg,
+    bg_alt    = vim.g.color0     or mocha.bg_alt,
+    fg        = vim.g.foreground or mocha.fg,
+    red       = vim.g.color1     or mocha.red,
+    green     = vim.g.color2     or mocha.green,
+    yellow    = vim.g.color3     or mocha.yellow,
+    blue      = vim.g.color4     or mocha.blue,
+    magenta   = vim.g.color5     or mocha.magenta,
+    cyan      = vim.g.color6     or mocha.cyan,
+    comment   = vim.g.color8     or mocha.comment,
+    selection = vim.g.color8     or mocha.selection,
+    border    = vim.g.color0     or mocha.border,
+  }
 else
-  -- Minimal manual highlight setup since there's no plugin manager.
-  vim.cmd("highlight clear")
-  vim.cmd("syntax on")
-
-  -- General highlights
-  local hl = vim.api.nvim_set_hl
-  hl(0, "Normal",       { bg = mocha.bg, fg = mocha.fg })
-  hl(0, "NormalNC",     { bg = mocha.bg, fg = mocha.fg })
-  hl(0, "Comment",      { fg = mocha.comment, italic = true })
-  hl(0, "Constant",     { fg = mocha.yellow })
-  hl(0, "String",       { fg = mocha.green })
-  hl(0, "Identifier",   { fg = mocha.blue })
-  hl(0, "Function",     { fg = mocha.blue, bold = true })
-  hl(0, "Statement",    { fg = mocha.magenta })
-  hl(0, "Operator",     { fg = mocha.fg })
-  hl(0, "PreProc",      { fg = mocha.blue })
-  hl(0, "Type",         { fg = mocha.cyan })
-  hl(0, "Special",      { fg = mocha.red })
-  hl(0, "Error",        { fg = mocha.red, bg = mocha.bg, bold = true })
-  hl(0, "Todo",         { fg = mocha.yellow, bg = mocha.bg, bold = true })
-  hl(0, "MatchParen",   { bg = mocha.selection })
-  hl(0, "LineNr",       { fg = mocha.comment })
-  hl(0, "CursorLine",   { bg = mocha.bg_alt })
-  hl(0, "CursorLineNr", { fg = mocha.yellow, bold = true })
-  hl(0, "Visual",       { bg = mocha.selection })
-  hl(0, "Search",       { bg = mocha.blue, fg = mocha.bg })
-  hl(0, "IncSearch",    { bg = mocha.yellow, fg = mocha.bg })
-  hl(0, "Pmenu",        { bg = mocha.bg_alt, fg = mocha.fg })
-  hl(0, "PmenuSel",     { bg = mocha.blue, fg = mocha.bg })
-  hl(0, "VertSplit",    { fg = mocha.border })
-  hl(0, "SignColumn",   { bg = mocha.bg })
-  hl(0, "StatusLine",   { bg = mocha.bg_alt, fg = mocha.fg, bold = true })
-  hl(0, "StatusLineNC", { bg = mocha.bg_alt, fg = mocha.comment })
-  hl(0, "TabLine",      { bg = mocha.bg_alt, fg = mocha.comment })
-  hl(0, "TabLineSel",   { bg = mocha.bg_alt, fg = mocha.fg, bold = true })
-  hl(0, "TabLineFill",  { bg = mocha.bg_alt })
+  P = mocha
 end
+
+-- Apply highlights. Same code regardless of which palette we picked.
+vim.cmd("highlight clear")
+vim.cmd("syntax on")
+
+local hl = vim.api.nvim_set_hl
+hl(0, "Normal",       { bg = P.bg, fg = P.fg })
+hl(0, "NormalNC",     { bg = P.bg, fg = P.fg })
+hl(0, "Comment",      { fg = P.comment, italic = true })
+hl(0, "Constant",     { fg = P.yellow })
+hl(0, "String",       { fg = P.green })
+hl(0, "Identifier",   { fg = P.blue })
+hl(0, "Function",     { fg = P.blue, bold = true })
+hl(0, "Statement",    { fg = P.magenta })
+hl(0, "Operator",     { fg = P.fg })
+hl(0, "PreProc",      { fg = P.blue })
+hl(0, "Type",         { fg = P.cyan })
+hl(0, "Special",      { fg = P.red })
+hl(0, "Error",        { fg = P.red, bg = P.bg, bold = true })
+hl(0, "Todo",         { fg = P.yellow, bg = P.bg, bold = true })
+hl(0, "MatchParen",   { bg = P.selection })
+hl(0, "LineNr",       { fg = P.comment })
+hl(0, "CursorLine",   { bg = P.bg_alt })
+hl(0, "CursorLineNr", { fg = P.yellow, bold = true })
+hl(0, "Visual",       { bg = P.selection })
+hl(0, "Search",       { bg = P.blue, fg = P.bg })
+hl(0, "IncSearch",    { bg = P.yellow, fg = P.bg })
+hl(0, "Pmenu",        { bg = P.bg_alt, fg = P.fg })
+hl(0, "PmenuSel",     { bg = P.blue, fg = P.bg })
+hl(0, "VertSplit",    { fg = P.border })
+hl(0, "SignColumn",   { bg = P.bg })
+hl(0, "StatusLine",   { bg = P.bg_alt, fg = P.fg, bold = true })
+hl(0, "StatusLineNC", { bg = P.bg_alt, fg = P.comment })
+hl(0, "TabLine",      { bg = P.bg_alt, fg = P.comment })
+hl(0, "TabLineSel",   { bg = P.bg_alt, fg = P.fg, bold = true })
+hl(0, "TabLineFill",  { bg = P.bg_alt })
 
 -- ---- Statusline (no plugin) ------------------------------------------------
 local function statusline()

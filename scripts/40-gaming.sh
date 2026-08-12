@@ -36,7 +36,7 @@ EOF
 
 echo
 echo "==> mangohud config: ~/.config/MangoHud/MangoHud.conf"
-echo "    Default preset to start with:"
-echo "      fps,cpu_stats,gpu_stats,ram,vram,frame_timing,histogram"
-echo "    (we'll write a starter MangoHud.conf on next install.)"
+echo "    (already installed by 30-dotfiles.sh's blanket cp of config/.)"
+echo "    Default preset: fps,cpu_stats,gpu_stats,ram,vram,frame_timing,histogram"
+echo "    Toggle HUD in-game with Right Shift, reload cfg with Right Ctrl."
 echo "==> DONE."

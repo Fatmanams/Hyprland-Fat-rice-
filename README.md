@@ -23,9 +23,13 @@ exactly. No AUR helpers (paru/yay), no `curl | bash` installers.
 | Widgets          | eww                  | **AUR — makepkg'd**     | tiny demo widget alongside waybar |
 | Cursor theme     | bibata-cursor-theme  | **AUR — makepkg'd**     | Modern variant, 24px |
 | Logout menu      | wlogout              | **AUR — makepkg'd**     |       |
-| Terminal         | ghostty              | pacman (extra)          |       |
+| Terminal         | ghostty              | pacman (extra)          | primary; shell = zsh (pacman) |
 | Code editor      | zed                  | **AUR — makepkg'd**     | primary $EDITOR + $CODE for python/c/c++/lua/java/rust/json |
 | Quick editor     | neovim              | pacman (extra)          | terminal edits, pywal-driven, no plugins |
+| Browser          | brave                | **AUR — brave-bin**     | default; xdg-mime default for http(s)/ftp/html |
+| Media player     | vlc                  | pacman (extra)          | default for video/audio MIME types |
+| TUI file mgr     | yazi                 | pacman (extra)          | SUPER+SHIFT+E |
+| GUI file mgr     | thunar               | pacman (extra)          | SUPER+SHIFT+F; +gvfs +tumbler +thunar-archive-plugin |
 | Display manager  | sddm                 | pacman (extra)          |       |
 | SDDM theme       | sddm-astronaut-theme | **bare git clone**      | rule #4: no build step, cloned straight into /usr/share/sddm/themes |
 | GTK theming GUI  | nwg-look             | pacman (extra)          |       |
@@ -45,7 +49,8 @@ official Arch repos and installed by `scripts/00-base.sh`.
 | `python-pywal16`       | `<https://aur.archlinux.org/python-pywal16.git>` | Python package, active fork of pywal              |
 | `bibata-cursor-theme`  | `<https://aur.archlinux.org/bibata-cursor-theme.git>` | Cursor theme, has install hooks (systemctl-like) |
 | `wlogout`              | `<https://aur.archlinux.org/wlogout.git>` | Wayland logout menu, GTK3                                         |
-| `zed`                  | `<https://aur.archlinux.org/zed.git>`    | **Reviews carefully**: large Rust project, many cargo crates, may pull release assets during build |
+| `zed`                  | `<https://aur.archlinux.org/zed.git>`    | **Review carefully**: large Rust project, many cargo crates, may pull release assets during build |
+| `brave-bin`            | `<https://aur.archlinux.org/brave-bin.git>` | Precompiled Brave in .deb form, repackaged to .pkg.tar.zst. Downloads from Brave's signed CDN (NOT curl\|bash). Read the PKGBUILD anyway. |
 
 **Packages you originally listed as AUR-only that are now in official
 repos** — these are installed by `scripts/00-base.sh`, **not** built:
@@ -141,7 +146,7 @@ Two layers:
 
 ---
 
-
+## Installation steps
 
 Run the staged scripts in order. **Read each one before running.** None
 are silent; AUR builds explicitly pause and print the PKGBUILD for your
@@ -387,6 +392,52 @@ CPU/GPU stats, RAM, VRAM, swap, histogram, and is toggleable with
 
 ---
 
+## Notable bug-fix audit (reviewer pass)
+
+The repo went through a focused review pass that caught bugs where values
+were written from memory rather than verified against upstream docs. The
+patterns documented inline (in comments in `hypridle.conf`, `gpu-env.sh`,
+`hyprland.conf`, `wlogout/layout`, `config/nvim/init.lua`) explain what
+was wrong and what the correct spec says. Summary of what was caught:
+
+- `scripts/10-aur.sh` — `makepkg -Cso` flag wrong (`-o` = "no build", per
+  makepkg(8)); now `makepkg -Cs`. Header comment corrected to match.
+- `config/wlogout/layout` — wrong JSON schema (had a `{layout: [...]}`
+  wrapper); now one JSON object per button per wlogout(5), keys
+  `label`/`action`/`text`/`keybind`.
+- `config/hypr/hyprland.conf` — `source =` lines that fed hyprpaper.conf /
+  hypridle.conf into the compositor's parser (these daemons read their
+  own configs, sourcing them into Hyprland would error or clobber the
+  `general{}` block); now sourced as standalone daemons. The
+  `keybinds-extra.conf` line used shell redirection
+  (`source = ... 2>/dev/null || true`) that `source` can't take; now a
+  plain `source =` against an empty installed file.
+- `config/hypr/gpu-env.sh` — mixed-case `Mesa_*` env vars (Mesa silently
+  ignores); now `MESA_*` all-caps per `docs.mesa3d.org/envvars.html`. The
+  bogus `VK_ICD_FILENAMES_ALL_KNOWN=1` (not a real Khronos Vulkan loader
+  var) was removed entirely. `MESA_GLSL_CACHE_DIR` (also not real) is now
+  `MESA_SHADER_CACHE_DIR`.
+- `config/rofi/config.rasi` — referenced `Papirus-Dark` icon theme;
+  `papirus-icon-theme` now added to `scripts/00-base.sh`.
+- `config/ghostty/config` — `command = /usr/bin/zsh` but `zsh` was never
+  installed; now added to `scripts/00-base.sh`.
+- `config/nvim/init.lua` — called `colorscheme pywal` after sourcing
+  `colors.vim`. Both wrong: pywal16's actual file is `colors-wal.vim`
+  (NOT `colors.vim`), and the template doesn't register a colorscheme at
+  all — it only defines `color0..15` vim variables. Now sources the
+  correct file and uses those variables to drive `nvim_set_hl` directly.
+- `config/hypr/hypridle.conf` — listener referenced `$lock_cmd` as if
+  it were a shell var; `lock_cmd` is an internal config keyword under
+  `general{}` (per hypridle upstream `assets/example.conf`), not expanded
+  in listeners. Now uses `loginctl lock-session` (the upstream-default
+  listener action), which triggers the configured `lock_cmd` via logind.
+- `scripts/00-base.sh` — listed `kvantum-qt6` which doesn't exist in
+  Arch repos (the `kvantum` package IS the qt6 build per its
+  description); would have killed `00-base.sh` under `set -euo pipefail`.
+  Line removed.
+
+---
+
 ## Tree
 
 ```
@@ -397,13 +448,14 @@ linux-rice/
 │   ├── 00-base.sh                          official-repo install + makepkg.conf
 │   ├── 10-aur.sh                           reviewed-PKGBUILD builds + repo-add
 │   ├── 20-sddm.sh                          bare git clone + rollback snapshot
-│   ├── 30-dotfiles.sh                      copiers config/ into ~/.config
+│   ├── 30-dotfiles.sh                      copies config/ into ~/.config (backup first)
 │   └── 40-gaming.sh                        verifies gaming extras + templates
 └── config/
     ├── hypr/
     │   ├── hyprland.conf                   compositor config (monitor= TODO!)
     │   ├── hyprpaper.conf                  wallpaper daemon (wallpaper TODO!)
     │   ├── hypridle.conf                   idle / lock / suspend listeners
+    │   ├── keybinds-extra.conf             empty by default; user-local bind additions
     │   └── gpu-env.sh                      NVIDIA/Intel/AMD auto-detect env vars (source from shell rc)
     ├── nvim/
     │   └── init.lua                         single-file nvim config; pywal-driven, no plugins

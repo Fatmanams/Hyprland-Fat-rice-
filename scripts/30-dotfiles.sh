@@ -35,6 +35,14 @@ echo "==> Copying rice configs into ~/.config"
 mkdir -p "$HOME/.config"
 cp -a "$CFG_SRC/." "$HOME/.config/"
 
+# Hyprland's `source = ~/.config/hypr/keybinds-extra.conf` line cannot
+# take shell redirects, so the file MUST exist for the compositor to load
+# the main config without error. cp -a above covers this from the repo's
+# config/hypr/keybinds-extra.conf, but defensively touch it here too in
+# case the repo file was deleted after install:
+mkdir -p "$HOME/.config/hypr"
+touch "$HOME/.config/hypr/keybinds-extra.conf"
+
 # The rice ships a zed-handler.desktop file under config/applications/.
 # (~/.local/share/applications/). Also refresh the desktop database so
 # the file is picked up immediately by xdg-mime and rofi.
@@ -42,7 +50,7 @@ echo "==> Installing zed-handler.desktop into ~/.local/share/applications/"
 mkdir -p "$HOME/.local/share/applications"
 cp -f "$CFG_SRC/applications/zed-handler.desktop" "$HOME/.local/share/applications/" 2>/dev/null || true
 update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || \
-    echo "    (update-desktop-database not available — install xdg-utils)"
+    echo "    (update-desktop-database not available — install desktop-file-utils)"
 
 # A couple of paths need to be created/written by tooling on first run;
 # make them now so nothing errors out.

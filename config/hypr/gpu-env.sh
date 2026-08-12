@@ -38,7 +38,13 @@ VENDOR=$(gpu_vendor)
 
 # ---- Common (any GPU) ---------------------------------------------------
 export DRI_PRIME=1                              # honour PRIME offload if present (laptops)
-export VK_ICD_FILENAMES_ALL_KNOWN=1            # don't gate ICD files
+# (Previously had `VK_ICD_FILENAMES_ALL_KNOWN=1` here — that's not a real
+# Vulkan loader env var per Khronos's loader docs at
+# https://github.com/KhronosGroup/Vulkan-Loader/blob/main/docs/LoaderInterfaceArchitecture.md
+# The real ICD env vars are VK_ICD_FILENAMES (deprecated),
+# VK_DRIVER_FILES, VK_ADD_DRIVER_FILES. Removed because the line was
+# doing nothing — Steam's runtime already handles ICD selection, and
+# adding the real ones would force-select a single driver and break PRIME)
 
 # ---- NVIDIA-specific -----------------------------------------------------
 if [ "$VENDOR" = nvidia ]; then
@@ -46,7 +52,7 @@ if [ "$VENDOR" = nvidia ]; then
     export __GL_THREADED_OPTIMIZATIONS=1
     export __GL_GSYNC_ALLOWED=1
     export __GL_VRR_ALLOWED=1
-    # VDPAU/VAAPI routing  (NVIDIA:
+    # VDPAU/VAAPI routing (NVIDIA):
     export VDPAU_DRIVER=nvidia
     export LIBVA_DRIVER_NAME=nvidia
     # Proton/Vulkan picks the right ICD automatically since Steam ships its
@@ -55,18 +61,27 @@ if [ "$VENDOR" = nvidia ]; then
 
 # ---- AMD/Intel (Mesa) ----------------------------------------------------
 elif [ "$VENDOR" = amd ] || [ "$VENDOR" = intel ]; then
-    : MESA_GLSL_CACHE_DIR set by GLEW - keep default
-    export Mesa_GL_VERSION_OVERRIDE=4.6        # some old games prefer this
-    export Mesa_GLSL_CACHE_DISABLE=false       # default, but explicit
+    # NOTE: Mesa env var names are all-caps per the Mesa docs at
+    # https://docs.mesa3d.org/envvars.html — earlier versions of this
+    # file used mixed-case `Mesa_*` vars that Mesa silently ignored,
+    # AND used `MESA_GLSL_CACHE_DIR` which is not real (the actual
+    # var is `MESA_SHADER_CACHE_DIR`).
+    export MESA_SHADER_CACHE_DIR="$HOME/.cache/mesa_shader_cache"  # real var per Mesa docs
+    export MESA_SHADER_CACHE_MAX_SIZE=2G                          # generous for game loads
+    # If you specifically need GL version spoofing for an old game,
+    # uncomment: export MESA_GL_VERSION_OVERRIDE=4.6
+    # (Don't export it by default — Mesa reports the real version to apps
+    # that probe, and lies confuse game engine detection more than help.)
 
     if [ "$VENDOR" = intel ]; then
-        export LIBVA_DRIVER_NAME=iHD           # Broadwell+; on Haswell use i965
+        export LIBVA_DRIVER_NAME=iHD              # Broadwell+; on Haswell use i965
         export VDPAU_DRIVER=va_gl
     else
-        export LIBVA_DRIVER_NAME=radeonsi      # Mesa VA-API on AMD
-        export VDPAU_DRIVER=radeonsi            # fallback if VPDU hits
-        export Mesa_GL_VERSION_OVERRIDE=4.6
-        export radeonsi_shader_cache_enable=true
+        export LIBVA_DRIVER_NAME=radeonsi         # Mesa VA-API on AMD
+        export VDPAU_DRIVER=radeonsi              # fallback if VPDU hits
+        # (Previously exported the bogus `radeonsi_shader_cache_enable` —
+        # not a real env var. Mesa's shader cache is controlled by the
+        # MESA_SHADER_CACHE_* vars above; this AMD-specific one was no-op.)
     fi
 fi
 
