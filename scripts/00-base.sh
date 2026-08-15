@@ -101,6 +101,18 @@ sudo ufw --force enable
 sudo systemctl enable --now ufw.service
 echo "    ufw active and enabled at boot: deny incoming, allow outgoing."
 
+echo "==> [3.2/4] Optional: Emacs"
+# Emacs is OFF by default — the rice's editors are Zed (GUI) and nvim
+# (terminal). Opt in here if you also want Emacs; its config ships at
+# config/emacs/init.el and 30-dotfiles.sh seeds it only when installed.
+read -r -p "    Install emacs (official extra repo, pgtk/Wayland build)? [y/N] " yn
+if [[ "$yn" =~ ^[Yy]$ ]]; then
+    sudo pacman -S --needed --noconfirm emacs
+    echo "    emacs installed."
+else
+    echo "    skipped emacs."
+fi
+
 echo "==> [3.5/4] GPU driver layer (NVIDIA or Intel/AMD — pick one)"
 GPU_CHOSEN=0
 CURRENT_GPU=$(lspci -nn 2>/dev/null | grep -Ei ' VGA compatible controller: ' | head -n1)

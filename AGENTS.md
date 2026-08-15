@@ -68,6 +68,13 @@ Do not add to `10-aur.sh` — they are already in `00-base.sh`:
 `kvantum`, `kvantum-qt5`, `gamemode`, `gamescope`, `mangohud`,
 `lib32-mangohud`, `python-pywal` (old fork — we use `pywal16` by choice).
 
+**Opt-in package**: `emacs` (official `extra`, pgtk/Wayland build) is
+deliberately NOT in the mandatory list — `00-base.sh` installs it only
+behind a `[y/N]` prompt (`[3.2/4] Optional: Emacs`). `30-dotfiles.sh`
+seeds `config/emacs/init.el` only when the binary is present (removes
+the stray copy otherwise). Don't promote it to the mandatory `pacman -S`
+block without an explicit user request.
+
 ---
 
 ## Build speed settings (already applied by `00-base.sh`)
@@ -114,8 +121,10 @@ Every AUR-only build goes through `scripts/10-aur.sh`'s `build_one()`.
     ├── wlogout/{layout,style.css}
     ├── ghostty/config
     ├── MangoHud/MangoHud.conf
-    ├── vlc/vlcrc                        minimal; decoding + snapshot dir left on VLC's defaults
+    ├── vlc/vlcrc                        snapshots -> ~/Pictures/vlc-snapshots (@HOME@ placeholder expanded by 30-dotfiles.sh); decoding left on VLC's default
+    ├── emacs/init.el                    OPTIONAL editor config (opt-in in 00-base.sh); pywal-driven, no packages
     ├── wal/templates/colors-rofi.rasi   custom pywal user template -> ~/.cache/wal/colors-rofi.rasi
+    ├── wal/templates/colors.el          custom pywal user template -> ~/.cache/wal/colors.el (read by emacs/init.el)
     └── applications/
         └── zed-handler.desktop  registered via xdg-mime default in hyprland.conf
 ```
@@ -209,9 +218,9 @@ Color theming is **pywal16-driven, single source of truth**. The flow:
 
 1. `hyprland.conf` runs `wal -i ~/.config/hypr/wallpaper.jpg` at session start
 2. pywal16 writes `~/.cache/wal/colors-waybar.css` (stock pywal16 template,
-   GTK `@define-color` syntax), `~/.cache/wal/colors-rofi.rasi` (from the
-   **custom** user template this repo ships), and
-   `~/.cache/wal/colors-wal.vim`
+   GTK `@define-color` syntax), `~/.cache/wal/colors-rofi.rasi` and
+   `~/.cache/wal/colors.el` (both from **custom** user templates this repo
+   ships), and `~/.cache/wal/colors-wal.vim`
 3. The GTK-CSS components (`waybar/style.css`, `swaync/style.css`,
    `eww/eww.scss`, `wlogout/style.css`) all
    `@import "../../.cache/wal/colors-waybar.css";` at the top. Do **not**
@@ -222,10 +231,14 @@ Color theming is **pywal16-driven, single source of truth**. The flow:
    (raw `@colorN` scheme matching this rice's design). The stock
    `colors-rofi-dark.rasi` was deliberately NOT used — its semantic names
    don't match. `config/wal/templates/` MUST stay covered by
-   `30-dotfiles.sh`'s blanket `config/` install step so the template
-   reaches `~/.config/wal/templates/` where `wal` reads it.
+   `30-dotfiles.sh`'s blanket `config/` install step so the templates
+   reach `~/.config/wal/templates/` where `wal` reads them. Same rule
+   covers the second custom template `colors.el` — deleting its dir from
+   the blanket copy breaks Emacs theming.
 5. Neovim sources `~/.cache/wal/colors-wal.vim` at editor open (falls back
-   to a baked Catppuccin Mocha palette if pywal hasn't run yet)
+   to a baked Catppuccin Mocha palette if pywal hasn't run yet). Emacs
+   (opt-in) does the same with `~/.cache/wal/colors.el` via
+   `config/emacs/init.el`, same Mocha fallback.
 6. Ghostty is the outlier — its config bakes Catppuccin Mocha because
    ghostty doesn't `@import` CSS. A post-wal hook that regenerates a
    ghostty colors.conf from pywal is a documented TODO in `README.md`'s

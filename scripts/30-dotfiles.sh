@@ -42,6 +42,13 @@ cp -a "$CFG_SRC/." "$HOME/.config/"
 # here is recoverable from the $BAK backup taken above.
 rm -rf "$HOME/.config/applications"
 
+# config/emacs/ only matters if emacs was opted into in 00-base.sh; drop
+# the stray copy otherwise (recoverable from the backup above). Emacs
+# reads ~/.config/emacs/init.el only when ~/.emacs.d does not exist.
+if ! command -v emacs >/dev/null 2>&1; then
+    rm -rf "$HOME/.config/emacs"
+fi
+
 # Hyprland's `source = ~/.config/hypr/keybinds-extra.conf` line cannot
 # take shell redirects, so the file MUST exist for the compositor to load
 # the main config without error. cp -a above covers this from the repo's
@@ -58,6 +65,13 @@ mkdir -p "$HOME/.local/share/applications"
 cp -f "$CFG_SRC/applications/zed-handler.desktop" "$HOME/.local/share/applications/" 2>/dev/null || true
 update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || \
     echo "    (update-desktop-database not available — install desktop-file-utils)"
+
+# config/vlc/vlcrc ships snapshot-path with an @HOME@ placeholder: VLC
+# does no tilde expansion on that option (see the vlcrc comments), so
+# expand it here and pre-create the dir (VLC won't create it itself).
+# Idempotent: on re-run the placeholder is already gone.
+sed -i "s|@HOME@|$HOME|g" "$HOME/.config/vlc/vlcrc"
+mkdir -p "$HOME/Pictures/vlc-snapshots"
 
 # A couple of paths need to be created/written by tooling on first run;
 # make them now so nothing errors out.
