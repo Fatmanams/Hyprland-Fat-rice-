@@ -96,7 +96,10 @@ echo "    bluetooth.service enabled."
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
 sudo ufw --force enable
-echo "    ufw active: deny incoming, allow outgoing."
+# ufw --force enable only starts it for THIS boot; on Arch the firewall
+# comes back after reboot only if ufw.service is enabled (ArchWiki).
+sudo systemctl enable --now ufw.service
+echo "    ufw active and enabled at boot: deny incoming, allow outgoing."
 
 echo "==> [3.5/4] GPU driver layer (NVIDIA or Intel/AMD — pick one)"
 GPU_CHOSEN=0

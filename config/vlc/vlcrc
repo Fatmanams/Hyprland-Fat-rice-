@@ -9,9 +9,9 @@
 
 # avcodec-hw defaults to "any" (auto hardware-decode with software
 # fallback) — verified against `vlc -H --advanced` output directly, not
-# assumed. Deliberately not overridden: the only other accepted value is
-# "none", there's no per-backend (e.g. vaapi) value to force, and
-# community reports on AMD+Wayland hardware-decode forcing are mixed
-# enough that the working default is the safer choice. If 4K/AV1
-# playback stutters on the Vega 7 iGPU, check Tools > Codec Information
-# while a video is playing before changing anything here.
+# assumed. Deliberately not overridden: per-backend values (e.g. vaapi)
+# CAN be forced, but community reports on AMD+Wayland hardware-decode
+# forcing are mixed enough that the working default is the safer
+# choice. If 4K/AV1 playback stutters on the Vega 7 iGPU, check
+# Tools > Codec Information while a video is playing before changing
+# anything here.
