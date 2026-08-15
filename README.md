@@ -28,7 +28,7 @@ exactly. No AUR helpers (paru/yay), no `curl | bash` installers.
 | Code editor      | zed                  | **AUR — makepkg'd**     | primary $EDITOR + $CODE for python/c/c++/lua/java/rust/json; ships `config/zed/settings.json` (Mocha theme + Nerd font) |
 | Quick editor     | neovim              | pacman (extra)          | terminal edits, pywal-driven, no plugins |
 | Browser          | brave                | **AUR — brave-bin**     | default; xdg-mime default for http(s)/ftp/html |
-| Media player     | vlc                  | pacman (extra)          | default for video/audio MIME types |
+| Media player     | vlc                  | pacman (extra)          | default for video/audio MIME types; ships `config/vlc/vlcrc` (deliberately minimal — decoding and snapshot dir left on VLC's defaults, see file comments) |
 | TUI file mgr     | yazi                 | pacman (extra)          | SUPER+SHIFT+E |
 | GUI file mgr     | thunar               | pacman (extra)          | SUPER+SHIFT+F; +gvfs +tumbler +thunar-archive-plugin |
 | Display manager  | sddm                 | pacman (extra)          |       |
@@ -36,7 +36,12 @@ exactly. No AUR helpers (paru/yay), no `curl | bash` installers.
 | GTK theming GUI  | nwg-look             | pacman (extra)          |       |
 | Qt theming       | kvantum / kvantum-qt5 | pacman (extra)         |       |
 | Gaming           | gamemode mangohud lib32-mangohud steam | pacman (extra/multilib) | steam installed by 00-base.sh (multilib) |
+      themes-nvim-zed
 | Themes           | presets + switcher   | shipped files           | wallpaper (pywal) default; mocha/gruvbox/tokyonight presets, SUPER+SHIFT+T cycles |
+| Password manager | bitwarden            | pacman (extra)          | SUPER+V; org.freedesktop.secrets covered by gnome-keyring (already installed) |
+| Bluetooth        | bluez bluez-utils blueman | pacman (extra)     | bluetooth.service enabled by 00-base.sh; blueman-applet autostarts into waybar's tray |
+| Firewall         | ufw                  | pacman (extra)          | default deny incoming / allow outgoing, enabled by 00-base.sh |
+
 
 ---
 
@@ -188,7 +193,11 @@ sign-off before building anything.
 chmod +x scripts/*.sh
 
 # 1. Official-repo install — also configures /etc/makepkg.conf with
-#    MAKEFLAGS=-j$(nproc) and ccache in BUILDENV, and enables [multilib].
+#    MAKEFLAGS=-j$(nproc) and ccache in BUILDENV, enables [multilib],
+#    runs xdg-user-dirs-update (so ~/Pictures etc. exist — VLC's
+#    default snapshot dir is the Pictures dir), enables
+#    bluetooth.service, and sets up the ufw firewall baseline
+#    (deny incoming / allow outgoing).
 ./scripts/00-base.sh
 
 # 2. AUR builds — reviewed PKGBUILD, plain makepkg (build only),
@@ -330,7 +339,10 @@ Bindings:
 |-------------------|----------------------------------------------|
 | `SUPER + E`        | Open Zed                                     |
 | `SUPER + SHIFT + E`| Open Thunar (was SUPER+E before Zed won it)  |
+ themes-nvim-zed
 | `SUPER + SHIFT + T`| Cycle theme preset (mocha/gruvbox/tokyonight) |
+| `SUPER + V`        | Open Bitwarden                               |
+
 
 ### Sudoedit / visudo gotcha
 
@@ -562,8 +574,13 @@ linux-rice/
     │   └── config                          primary terminal, Catppuccin Mocha baked
     ├── MangoHud/
     │   └── MangoHud.conf                   gaming HUD config
+ themes-nvim-zed
     ├── zed/
     │   └── settings.json                   Mocha theme + Nerd font + autosave (~/.config/zed/)
+
+    ├── vlc/
+    │   └── vlcrc                           minimal; defaults left alone (see file comments)
+    
     ├── wal/
     │   └── templates/
     │       └── colors-rofi.rasi            custom pywal template -> ~/.cache/wal/colors-rofi.rasi

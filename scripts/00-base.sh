@@ -49,7 +49,7 @@ sudo pacman -S --needed --noconfirm \
     hyprland hypridle hyprlock hyprcursor hyprpaper hyprutils hyprlang \
     wayland wayland-protocols \
     xdg-desktop-portal-hyprland xdg-desktop-portal-gtk \
-    xdg-utils file \
+    xdg-utils xdg-user-dirs file \
     qt6-svg qt6-virtualkeyboard qt6-multimedia-ffmpeg qt6ct qt5ct \
     sddm \
     rofi-wayland \
@@ -78,7 +78,28 @@ sudo pacman -S --needed --noconfirm \
     poppler \
     yazi thunar tumbler thunar-archive-plugin thunar-volman gvfs \
     vlc \
+    bitwarden \
+    bluez bluez-utils blueman \
+    ufw \
     kde-cli-tools
+
+echo "==> [3.1/4] Post-install setup: user dirs, Bluetooth, firewall"
+xdg-user-dirs-update
+echo "    xdg user dirs created/updated (~/Pictures, ~/Downloads, ...)."
+
+sudo systemctl enable --now bluetooth.service
+echo "    bluetooth.service enabled."
+
+# Default-deny incoming / allow outgoing baseline for a personal desktop.
+# NOTE: hosting game servers or LAN services (e.g. a Minecraft server)
+# will need explicit `sudo ufw allow <port>` rules added later.
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw --force enable
+# ufw --force enable only starts it for THIS boot; on Arch the firewall
+# comes back after reboot only if ufw.service is enabled (ArchWiki).
+sudo systemctl enable --now ufw.service
+echo "    ufw active and enabled at boot: deny incoming, allow outgoing."
 
 echo "==> [3.5/4] GPU driver layer (NVIDIA or Intel/AMD — pick one)"
 GPU_CHOSEN=0

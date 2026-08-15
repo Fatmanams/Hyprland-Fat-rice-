@@ -94,6 +94,7 @@ Every AUR-only build goes through `scripts/10-aur.sh`'s `build_one()`.
 ├── .gitattributes               forces LF on all text files (target is Linux)
 ├── scripts/
 │   ├── 00-base.sh             official-repo install + makepkg.conf + GPU driver pick
+│   │                          (+ xdg-user-dirs-update, bluetooth.service, ufw baseline)
 │   ├── 10-aur.sh              reviewed-PKGBUILD makepkg + repo-add pipeline
 │   ├── 20-sddm.sh             sddm-astronaut-theme bare clone + rollback snapshot
 │   ├── 30-dotfiles.sh         installs config/ into ~/.config with backup
@@ -115,7 +116,9 @@ Every AUR-only build goes through `scripts/10-aur.sh`'s `build_one()`.
     ├── wlogout/{layout,style.css}
     ├── ghostty/config
     ├── MangoHud/MangoHud.conf
+ themes-nvim-zed
     ├── zed/settings.json       Mocha theme + Nerd font + autosave -> ~/.config/zed/
+    ├── vlc/vlcrc                        minimal; decoding + snapshot dir left on VLC's defaults
     ├── wal/templates/colors-rofi.rasi   custom pywal user template -> ~/.cache/wal/colors-rofi.rasi
     └── applications/
         └── zed-handler.desktop  registered via xdg-mime default in hyprland.conf
@@ -126,6 +129,11 @@ under `config/<component>/` for the dotfiles, an `exec-once` line in
 `hyprland.conf` to start it, and — *if* and only if there's no
 official-repo equivalent — an entry in `scripts/10-aur.sh`'s
 `PACKAGES=(...)` array.
+
+Qt apps run native Wayland via `env = QT_QPA_PLATFORM, wayland;xcb` in
+`hyprland.conf` (the `;xcb` fallback is required — some Qt apps fail to
+start without it). `QT_QPA_PLATFORMTHEME, qt6ct` picks the theme; the
+two vars are independent, keep both.
 
 ---
 
