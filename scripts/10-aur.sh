@@ -24,6 +24,7 @@
 #     wlogout                https://aur.archlinux.org/wlogout.git
 #     zed                    https://aur.archlinux.org/zed.git
 #     brave-bin              https://aur.archlinux.org/brave-bin.git
+#     mpvpaper               https://aur.archlinux.org/mpvpaper.git
 #
 #     (Zed is NATIVE AUR-only — no curl|bash installer, no official repo —
 #     so per the policy it goes through this same reviewed-makepkg pipeline.
@@ -35,6 +36,13 @@
 #     .pkg.tar.zst. The PKGBUILD downloads from Brave's CDN at build time
 #     and unwraps the upstream .deb — that is NOT curl|bash, it's
 #     downloading a signed binary distribution. Read the PKGBUILD anyway.)
+#
+#     (mpvpaper: video wallpaper daemon for wlroots compositors. Reviewed
+#     PKGBUILD 1.9-1 against the live AUR copy: source is a pinned GitHub
+#     release tarball with a b2sum, built with meson/ninja, depends on
+#     libmpv.so + libwayland (mpv is pulled in automatically by makepkg -s),
+#     optdepends socat for socket control, no install hooks, no curl|bash,
+#     no suspicious URLs. No red flags.)
 #
 #
 # Items your original policy listed as AUR-only but which are now in
@@ -86,7 +94,6 @@ setup_local_repo() {
 SigLevel = Optional TrustAll
 Server = file://$LOCALREPO_DIR
 EOF
-        sudo pacman -Sy
     fi
 }
 
@@ -169,13 +176,18 @@ build_one() {
         cp "$pkg" "$LOCALREPO_DIR/"
         ( cd "$LOCALREPO_DIR" && repo-add "$LOCALREPO_NAME.db.tar.zst" "$(basename "$pkg")" )
     done
-    sudo pacman -Sy
     # Install by name from the local repo explicitly.
     sudo pacman -S --noconfirm --needed "$pkgname"
 }
 
 # --- Main -------------------------------------------------------------------
 setup_local_repo
+
+# Full sync+upgrade once per run (not per package — a per-package -Sy/-Syu
+# is Arch's partial-upgrade anti-pattern, and upgrading inside the loop
+# would repeat a full system upgrade for every AUR build).
+echo "==> Syncing + upgrading system once before AUR builds"
+sudo pacman -Syu --noconfirm
 
 PACKAGES=(
     eww
@@ -184,6 +196,7 @@ PACKAGES=(
     wlogout
     zed
     brave-bin
+    mpvpaper
 )
 
 for p in "${PACKAGES[@]}"; do

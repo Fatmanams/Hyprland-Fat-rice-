@@ -18,8 +18,6 @@ font-feature = -calt
 font-feature = -liga
 
 # ---- Window -------------------------------------------------------------
-padding-x = 12
-padding-y = 10
 window-padding-x = 12
 window-padding-y = 10
 window-decoration = false
@@ -42,7 +40,7 @@ cursor-style = bar
 cursor-style-blink = true
 
 # ---- Shell + working dir ------------------------------------------------
-command = /usr/bin/zsh   # if you use bash, swap. zsh ships with base.
+command = /usr/bin/fish   # installed by 00-base.sh; verify path with `which fish`
 working-directory = home
 
 # ---- Catppuccin Mocha (baked default; pywal override noted above) -------
