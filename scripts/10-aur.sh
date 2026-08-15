@@ -94,7 +94,6 @@ setup_local_repo() {
 SigLevel = Optional TrustAll
 Server = file://$LOCALREPO_DIR
 EOF
-        sudo pacman -Syu --noconfirm
     fi
 }
 
@@ -177,13 +176,18 @@ build_one() {
         cp "$pkg" "$LOCALREPO_DIR/"
         ( cd "$LOCALREPO_DIR" && repo-add "$LOCALREPO_NAME.db.tar.zst" "$(basename "$pkg")" )
     done
-    sudo pacman -Syu --noconfirm
     # Install by name from the local repo explicitly.
     sudo pacman -S --noconfirm --needed "$pkgname"
 }
 
 # --- Main -------------------------------------------------------------------
 setup_local_repo
+
+# Full sync+upgrade once per run (not per package — a per-package -Sy/-Syu
+# is Arch's partial-upgrade anti-pattern, and upgrading inside the loop
+# would repeat a full system upgrade for every AUR build).
+echo "==> Syncing + upgrading system once before AUR builds"
+sudo pacman -Syu --noconfirm
 
 PACKAGES=(
     eww

@@ -151,7 +151,8 @@ interactively — do not store tokens or accept PASTED tokens in chat.
 
 ## Lint / verify / test
 
-There is no test suite. There's no CI. What verifying exists:
+There is no test suite. What verifying exists (also enforced on push/PR
+by `.github/workflows/lint.yml`):
 
 1. **Bash syntax check** on every script edit:
    ```
@@ -172,7 +173,8 @@ There is no test suite. There's no CI. What verifying exists:
    an object literal at session-time. Don't remove it without testing).
 
 If you add a new script, structure, or behavior, run the relevant
-syntax checks before committing. There is no CI to catch it later.
+syntax checks before committing, and add it to the lint workflow's
+coverage if it isn't already (CI catches it otherwise).
 
 ---
 

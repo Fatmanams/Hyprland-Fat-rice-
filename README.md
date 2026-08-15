@@ -465,11 +465,17 @@ was wrong and what the correct spec says. Summary of what was caught:
   ghostty's `command =` updated in lockstep).
 - `scripts/10-aur.sh` — same bare `pacman -Sy` partial-upgrade
   anti-pattern in two places (local-repo registration and post-build
-  install); both now `pacman -Syu --noconfirm`.
+  install); replaced with a single `pacman -Syu --noconfirm` before the
+  build loop (once per run — upgrading per package would repeat a full
+  system upgrade for every AUR build).
 - `config/hypr/gpu-env.sh` — `DRI_PRIME=1` was exported unconditionally,
   which on single-GPU boxes can point apps at a render node that doesn't
   exist; now only exported when `lspci` reports more than one GPU
-  controller.
+  controller. Also fixed the detection itself: the greps matched
+  `lspci -nn` output, but `-nn` inserts the class code between name and
+  colon (`VGA compatible controller [0300]:`), so vendor detection and
+  the GPU count never matched; now parses plain `lspci` output, captured
+  once per shell start.
 - `config/ghostty/config` — `padding-x` / `padding-y` are not real
   Ghostty options (only `window-padding-x` / `window-padding-y` exist per
   the option reference); dead lines removed.
