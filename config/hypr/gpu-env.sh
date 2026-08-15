@@ -37,7 +37,16 @@ gpu_vendor() {
 VENDOR=$(gpu_vendor)
 
 # ---- Common (any GPU) ---------------------------------------------------
-export DRI_PRIME=1                              # honour PRIME offload if present (laptops)
+# DRI_PRIME=1 only makes sense on PRIME/hybrid setups (iGPU + dGPU). On a
+# single-GPU box it can point apps at a render node that doesn't exist, so
+# only export it when lspci reports more than one GPU controller.
+if command -v lspci >/dev/null 2>&1; then
+    gpu_count=$(lspci -nn | grep -cEi ' VGA compatible controller: | 3D controller: ')
+    if [ "$gpu_count" -gt 1 ]; then
+        export DRI_PRIME=1                      # honour PRIME offload (hybrid laptops/desktops)
+    fi
+    unset gpu_count
+fi
 # (Previously had `VK_ICD_FILENAMES_ALL_KNOWN=1` here — that's not a real
 # Vulkan loader env var per Khronos's loader docs at
 # https://github.com/KhronosGroup/Vulkan-Loader/blob/main/docs/LoaderInterfaceArchitecture.md

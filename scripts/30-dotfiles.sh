@@ -35,6 +35,13 @@ echo "==> Copying rice configs into ~/.config"
 mkdir -p "$HOME/.config"
 cp -a "$CFG_SRC/." "$HOME/.config/"
 
+# config/applications/ only exists as the source for the .desktop install
+# below — it does NOT belong under ~/.config/ (nothing reads
+# ~/.config/applications/). Remove the stray copy the blanket cp made;
+# the real copy lands in ~/.local/share/applications/. Anything removed
+# here is recoverable from the $BAK backup taken above.
+rm -rf "$HOME/.config/applications"
+
 # Hyprland's `source = ~/.config/hypr/keybinds-extra.conf` line cannot
 # take shell redirects, so the file MUST exist for the compositor to load
 # the main config without error. cp -a above covers this from the repo's

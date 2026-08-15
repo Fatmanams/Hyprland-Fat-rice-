@@ -52,6 +52,10 @@ Scripts run on Arch; do not assume Windows tools exist on the target.
 | `wlogout`              | Wayland logout menu, GTK3.                                         |
 | `zed`                  | Large Rust project. **Review PKGBUILD carefully** — may fetch      |
 |                        | release assets at build time.                                      |
+| `brave-bin`            | Precompiled Brave .deb repackaged; downloads from Brave's signed   |
+|                        | CDN (not curl\|bash). Read the PKGBUILD anyway.                    |
+| `mpvpaper`             | Animated wallpaper daemon. Pinned GitHub release tarball + b2sum,  |
+|                        | meson build, deps libmpv/wayland (mpv auto-pulled). No red flags.  |
 
 When a package leaves AUR for official repos (the trend), **remove it
 from `10-aur.sh` and add it to `00-base.sh`'s `pacman -S` list**. Don't
@@ -97,7 +101,7 @@ Every AUR-only build goes through `scripts/10-aur.sh`'s `build_one()`.
 └── config/
     ├── hypr/
     │   ├── hyprland.conf       compositor config (monitor= is a STOPGAP TODO — see notes)
-    │   ├── hyprpaper.conf      wallpaper daemon (wallpaper path is a TODO)
+    │   ├── hyprpaper.conf      static wallpaper FALLBACK config (mpvpaper is the default)
     │   ├── hypridle.conf       idle / lock / suspend listeners
     │   └── gpu-env.sh          NVIDIA/Intel/AMD auto-detect env shim (source from shell rc)
     ├── nvim/
@@ -109,6 +113,7 @@ Every AUR-only build goes through `scripts/10-aur.sh`'s `build_one()`.
     ├── wlogout/{layout,style.css}
     ├── ghostty/config
     ├── MangoHud/MangoHud.conf
+    ├── wal/templates/colors-rofi.rasi   custom pywal user template -> ~/.cache/wal/colors-rofi.rasi
     └── applications/
         └── zed-handler.desktop  registered via xdg-mime default in hyprland.conf
 ```
@@ -185,7 +190,7 @@ syntax checks before committing. There is no CI to catch it later.
 | Edit gaming HUD defaults                      | `config/MangoHud/MangoHud.conf`                              |
 | Change notification behavior                  | `config/swaync/config.json` + `config/swaync/style.css`      |
 | Change status bar layout                      | `config/waybar/config` + `config/waybar/style.css`           |
-| Change the wallpaper (user-side, post-install) | drop image at `~/.config/hypr/wallpaper.jpg`, run `wal -i` — NOT a repo edit |
+| Change the wallpaper (user-side, post-install) | static: drop image at `~/.config/hypr/wallpaper.jpg`, run `wal -i`; animated: drop video at `~/.config/hypr/wallpaper.mp4` (mpvpaper) — NOT repo edits |
 
 ---
 
@@ -194,13 +199,25 @@ syntax checks before committing. There is no CI to catch it later.
 Color theming is **pywal16-driven, single source of truth**. The flow:
 
 1. `hyprland.conf` runs `wal -i ~/.config/hypr/wallpaper.jpg` at session start
-2. pywal16 writes `~/.cache/wal/colors.css` and `~/.cache/wal/colors.vim`
-3. The CSS-importing components (`waybar/style.css`, `swaync/style.css`,
-   `rofi/config.rasi`, `eww/eww.scss`, `wlogout/style.css`) all
-   `@import "../../.cache/wal/colors.css";` at the top
-4. Neovim sources `~/.cache/wal/colors.vim` at editor open (falls back
+2. pywal16 writes `~/.cache/wal/colors-waybar.css` (stock pywal16 template,
+   GTK `@define-color` syntax), `~/.cache/wal/colors-rofi.rasi` (from the
+   **custom** user template this repo ships), and
+   `~/.cache/wal/colors-wal.vim`
+3. The GTK-CSS components (`waybar/style.css`, `swaync/style.css`,
+   `eww/eww.scss`, `wlogout/style.css`) all
+   `@import "../../.cache/wal/colors-waybar.css";` at the top. Do **not**
+   point them at `colors.css` — that file is web-CSS (`:root { --var }`)
+   which GTK CSS's `@name` references cannot resolve.
+4. `rofi/config.rasi` imports `~/.cache/wal/colors-rofi.rasi`, generated
+   from the custom template at `config/wal/templates/colors-rofi.rasi`
+   (raw `@colorN` scheme matching this rice's design). The stock
+   `colors-rofi-dark.rasi` was deliberately NOT used — its semantic names
+   don't match. `config/wal/templates/` MUST stay covered by
+   `30-dotfiles.sh`'s blanket `config/` install step so the template
+   reaches `~/.config/wal/templates/` where `wal` reads it.
+5. Neovim sources `~/.cache/wal/colors-wal.vim` at editor open (falls back
    to a baked Catppuccin Mocha palette if pywal hasn't run yet)
-5. Ghostty is the outlier — its config bakes Catppuccin Mocha because
+6. Ghostty is the outlier — its config bakes Catppuccin Mocha because
    ghostty doesn't `@import` CSS. A post-wal hook that regenerates a
    ghostty colors.conf from pywal is a documented TODO in `README.md`'s
    Tree section. **Do not silently edit ghostty's color palette** to
@@ -225,6 +242,13 @@ Don't hardcode hex colors that should match the dynamic palette.
 - The wallpaper path `~/.config/hypr/wallpaper.jpg` is a TODO the user
   fills in after `30-dotfiles.sh` runs. **Don't** vendor a wallpaper
   binary into this repo.
+- Animated wallpaper: `hyprland.conf` starts **mpvpaper** (AUR) pointed
+  at `~/.config/hypr/wallpaper.mp4` — also a user-side TODO, same rules:
+  `eDP-1` in the mpvpaper line is a placeholder for the real monitor
+  name, **don't** auto-fill it, **don't** vendor a video binary.
+  `hyprpaper` stays installed and wired as the commented fallback line;
+  `hyprpaper.conf` is the static-fallback config. Keep both paths
+  working — swapping between them must stay a one-line comment toggle.
 
 ---
 

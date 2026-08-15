@@ -24,7 +24,7 @@ if ! grep -q '^\[multilib\]' /etc/pacman.conf; then
 else
     echo "    multilib already enabled."
 fi
-sudo pacman -Sy
+sudo pacman -Syu --noconfirm
 
 echo "==> [2/3] Configuring /etc/makepkg.conf for parallelism + ccache"
 MAKEPKG=/etc/makepkg.conf
@@ -54,13 +54,11 @@ sudo pacman -S --needed --noconfirm \
     sddm \
     rofi-wayland \
     swaync \
-    swayidle swaybg sway \
-    waybar wob kanshi \
-    dunst \
+    waybar kanshi \
     grim slurp wl-clipboard \
     wlsunset \
     ghostty kitty alacritty \
-    zsh \
+    fish \
     nano neovim \
     polkit polkit-gnome polkit-kde-agent gnome-keyring seahorse \
     NetworkManager \
@@ -73,7 +71,7 @@ sudo pacman -S --needed --noconfirm \
     imagemagick ffmpeg \
     pciutils mesa-demos \
     hicolor-icon-theme adwaita-icon-theme papirus-icon-theme sound-theme-freedesktop \
-    gamemode gamescope mangohud lib32-mangohud \
+    gamemode gamescope mangohud lib32-mangohud steam \
     nwg-look kvantum kvantum-qt5 \
     swww cliphist \
     ripgrep fd zoxide chafa \

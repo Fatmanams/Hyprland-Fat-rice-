@@ -16,14 +16,15 @@ exactly. No AUR helpers (paru/yay), no `curl | bash` installers.
 | Notifications    | swaync               | pacman (extra)          | control-center + popup |
 | Launcher         | rofi-wayland        | pacman (extra)          | was AUR-only, moved upstream |
 | Wallpaper        | swww                 | pacman (extra)          | was AUR-only, moved upstream |
-| Wall daemon      | hyprpaper            | pacman (extra)          |       |
+| Animated wallpaper | mpvpaper           | **AUR — makepkg'd**     | default; hyprpaper kept as static fallback |
+| Wall daemon      | hyprpaper            | pacman (extra)          | static fallback config |
 | Clipboard        | cliphist + wl-clipboard | pacman (extra)       |       |
 | Idle / lock      | hypridle + hyprlock  | pacman (extra)          |       |
 | Color theming    | python-pywal16       | **AUR — makepkg'd**     |       |
 | Widgets          | eww                  | **AUR — makepkg'd**     | tiny demo widget alongside waybar |
 | Cursor theme     | bibata-cursor-theme  | **AUR — makepkg'd**     | Modern variant, 24px |
 | Logout menu      | wlogout              | **AUR — makepkg'd**     |       |
-| Terminal         | ghostty              | pacman (extra)          | primary; shell = zsh (pacman) |
+| Terminal         | ghostty              | pacman (extra)          | primary; shell = fish (pacman) |
 | Code editor      | zed                  | **AUR — makepkg'd**     | primary $EDITOR + $CODE for python/c/c++/lua/java/rust/json |
 | Quick editor     | neovim              | pacman (extra)          | terminal edits, pywal-driven, no plugins |
 | Browser          | brave                | **AUR — brave-bin**     | default; xdg-mime default for http(s)/ftp/html |
@@ -34,7 +35,7 @@ exactly. No AUR helpers (paru/yay), no `curl | bash` installers.
 | SDDM theme       | sddm-astronaut-theme | **bare git clone**      | rule #4: no build step, cloned straight into /usr/share/sddm/themes |
 | GTK theming GUI  | nwg-look             | pacman (extra)          |       |
 | Qt theming       | kvantum / kvantum-qt5 | pacman (extra)         |       |
-| Gaming           | gamemode mangohud lib32-mangohud | pacman (extra/multilib) |       |
+| Gaming           | gamemode mangohud lib32-mangohud steam | pacman (extra/multilib) | steam installed by 00-base.sh (multilib) |
 
 ---
 
@@ -51,6 +52,7 @@ official Arch repos and installed by `scripts/00-base.sh`.
 | `wlogout`              | `<https://aur.archlinux.org/wlogout.git>` | Wayland logout menu, GTK3                                         |
 | `zed`                  | `<https://aur.archlinux.org/zed.git>`    | **Review carefully**: large Rust project, many cargo crates, may pull release assets during build |
 | `brave-bin`            | `<https://aur.archlinux.org/brave-bin.git>` | Precompiled Brave in .deb form, repackaged to .pkg.tar.zst. Downloads from Brave's signed CDN (NOT curl\|bash). Read the PKGBUILD anyway. |
+| `mpvpaper`             | `<https://aur.archlinux.org/mpvpaper.git>` | Video wallpaper daemon (v1.9). Pinned GitHub release tarball with b2sum, meson/ninja build, deps libmpv + libwayland (mpv auto-pulled by makepkg -s), optdep socat. No install hooks, no curl\|bash, no red flags. |
 
 **Packages you originally listed as AUR-only that are now in official
 repos** — these are installed by `scripts/00-base.sh`, **not** built:
@@ -97,7 +99,8 @@ Two layers:
    they cannot be set conditionally at runtime — pick once.
 
 2. **App-level env** in `config/hypr/gpu-env.sh`. Source from your `.zshrc`
-   or `.bashrc`:
+   or `.bashrc` (fish users: it's a POSIX sh script — run it via `bass` or
+   translate the exports to `set -gx` in `config.fish`):
    ```bash
    # ~/.zshrc or ~/.bashrc
    if [ -f ~/.config/hypr/gpu-env.sh ]; then
@@ -211,8 +214,16 @@ Before the rice looks right:
    ```
    wal -i ~/.config/hypr/wallpaper.jpg
    ```
-   That regenerates `~/.cache/wal/colors.css`, which waybar / swaync /
-   rofi / eww all `@import` for their color palette.
+   That regenerates `~/.cache/wal/colors-waybar.css` (imported by waybar /
+   swaync / eww / wlogout) and `~/.cache/wal/colors-rofi.rasi` (imported by
+   rofi) for their color palettes.
+
+   **Animated wallpaper (mpvpaper, the default):** also drop a looping
+   video at `~/.config/hypr/wallpaper.mp4`, and in `hyprland.conf`
+   replace `eDP-1` in the mpvpaper exec-once line with your monitor name
+   from `hyprctl monitors`. If you'd rather have a static wallpaper,
+   comment the mpvpaper line and uncomment the `exec-once = hyprpaper`
+   line just below it.
 
 3. **Same edit in `~/.config/hypr/hyprpaper.conf`** — set the
    `wallpaper = <monitor>, ~/.config/hypr/wallpaper.jpg` line's monitor
@@ -435,6 +446,37 @@ was wrong and what the correct spec says. Summary of what was caught:
   Arch repos (the `kvantum` package IS the qt6 build per its
   description); would have killed `00-base.sh` under `set -euo pipefail`.
   Line removed.
+- Theming pipeline — all GTK/rasi consumers imported
+  `~/.cache/wal/colors.css`, which is web-CSS (`:root { --var }`) that
+  GTK CSS's `@name` references can't resolve, so every themed component
+  silently fell back to unstyled. waybar / swaync / wlogout / eww now
+  `@import` the stock pywal16 `colors-waybar.css` (`@define-color` GTK
+  syntax, no custom template needed); rofi now imports
+  `colors-rofi.rasi` generated from a small custom user template shipped
+  at `config/wal/templates/colors-rofi.rasi` (raw `@colorN` scheme — the
+  stock `colors-rofi-dark.rasi` uses semantic names that don't match this
+  rice's design and was deliberately not used).
+- `scripts/00-base.sh` — `steam` was documented (window rules, Proton
+  recipes, launch options) but never installed; added. `dunst` (unwired
+  second notification daemon), `sway`, `swayidle`, `swaybg`, `wob`
+  (nothing in a Hyprland rice references them) removed. Bare `pacman -Sy`
+  before the install transaction (partial-upgrade anti-pattern) replaced
+  with `pacman -Syu`. `zsh` swapped for `fish` (the shell actually used;
+  ghostty's `command =` updated in lockstep).
+- `scripts/10-aur.sh` — same bare `pacman -Sy` partial-upgrade
+  anti-pattern in two places (local-repo registration and post-build
+  install); both now `pacman -Syu --noconfirm`.
+- `config/hypr/gpu-env.sh` — `DRI_PRIME=1` was exported unconditionally,
+  which on single-GPU boxes can point apps at a render node that doesn't
+  exist; now only exported when `lspci` reports more than one GPU
+  controller.
+- `config/ghostty/config` — `padding-x` / `padding-y` are not real
+  Ghostty options (only `window-padding-x` / `window-padding-y` exist per
+  the option reference); dead lines removed.
+- `scripts/30-dotfiles.sh` — the blanket `cp -a config/. ~/.config/`
+  landed a stray `~/.config/applications/zed-handler.desktop` that
+  nothing reads (the real copy goes to `~/.local/share/applications/`);
+  the stray dir is now removed after the copy.
 
 ---
 
@@ -453,7 +495,7 @@ linux-rice/
 └── config/
     ├── hypr/
     │   ├── hyprland.conf                   compositor config (monitor= TODO!)
-    │   ├── hyprpaper.conf                  wallpaper daemon (wallpaper TODO!)
+    │   ├── hyprpaper.conf                  static wallpaper FALLBACK (mpvpaper is default)
     │   ├── hypridle.conf                   idle / lock / suspend listeners
     │   ├── keybinds-extra.conf             empty by default; user-local bind additions
     │   └── gpu-env.sh                      NVIDIA/Intel/AMD auto-detect env vars (source from shell rc)
@@ -477,6 +519,9 @@ linux-rice/
     │   └── config                          primary terminal, Catppuccin Mocha baked
     ├── MangoHud/
     │   └── MangoHud.conf                   gaming HUD config
+    ├── wal/
+    │   └── templates/
+    │       └── colors-rofi.rasi            custom pywal template -> ~/.cache/wal/colors-rofi.rasi
     └── applications/
         └── zed-handler.desktop             xdg-mime default for python/c/c++/lua/java/rust/json
 ```
