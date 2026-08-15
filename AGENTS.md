@@ -103,6 +103,8 @@ Every AUR-only build goes through `scripts/10-aur.sh`'s `build_one()`.
     │   ├── hyprland.conf       compositor config (monitor= is a STOPGAP TODO — see notes)
     │   ├── hyprpaper.conf      static wallpaper FALLBACK config (mpvpaper is the default)
     │   ├── hypridle.conf       idle / lock / suspend listeners
+    │   ├── switch-theme.sh     preset palette switcher (SUPER+SHIFT+T cycles)
+    │   ├── themes/{mocha,gruvbox,tokyonight}/   pre-generated pywal-format palettes
     │   └── gpu-env.sh          NVIDIA/Intel/AMD auto-detect env shim (source from shell rc)
     ├── nvim/
     │   └── init.lua            single-file nvim config; pywal-driven, no plugins
@@ -113,6 +115,7 @@ Every AUR-only build goes through `scripts/10-aur.sh`'s `build_one()`.
     ├── wlogout/{layout,style.css}
     ├── ghostty/config
     ├── MangoHud/MangoHud.conf
+    ├── zed/settings.json       Mocha theme + Nerd font + autosave -> ~/.config/zed/
     ├── wal/templates/colors-rofi.rasi   custom pywal user template -> ~/.cache/wal/colors-rofi.rasi
     └── applications/
         └── zed-handler.desktop  registered via xdg-mime default in hyprland.conf
@@ -193,6 +196,7 @@ coverage if it isn't already (CI catches it otherwise).
 | Change notification behavior                  | `config/swaync/config.json` + `config/swaync/style.css`      |
 | Change status bar layout                      | `config/waybar/config` + `config/waybar/style.css`           |
 | Change the wallpaper (user-side, post-install) | static: drop image at `~/.config/hypr/wallpaper.jpg`, run `wal -i`; animated: drop video at `~/.config/hypr/wallpaper.mp4` (mpvpaper) — NOT repo edits |
+| Change the color theme (no wallpaper)          | SUPER+SHIFT+T or `~/.config/hypr/switch-theme.sh <mocha\|gruvbox\|tokyonight>`; presets live in `config/hypr/themes/` |
 
 ---
 
@@ -200,7 +204,9 @@ coverage if it isn't already (CI catches it otherwise).
 
 Color theming is **pywal16-driven, single source of truth**. The flow:
 
-1. `hyprland.conf` runs `wal -i ~/.config/hypr/wallpaper.jpg` at session start
+1. `hyprland.conf` runs `wal -i ~/.config/hypr/wallpaper.jpg` at session
+   start when the wallpaper exists; otherwise it applies the selected
+   preset theme via `switch-theme.sh` (see step 7)
 2. pywal16 writes `~/.cache/wal/colors-waybar.css` (stock pywal16 template,
    GTK `@define-color` syntax), `~/.cache/wal/colors-rofi.rasi` (from the
    **custom** user template this repo ships), and
@@ -224,6 +230,16 @@ Color theming is **pywal16-driven, single source of truth**. The flow:
    ghostty colors.conf from pywal is a documented TODO in `README.md`'s
    Tree section. **Do not silently edit ghostty's color palette** to
    match the other components without addressing this TODO properly.
+7. Preset themes (used when no wallpaper is set): `config/hypr/themes/`
+   ships `mocha` / `gruvbox` / `tokyonight` as pre-generated copies of
+   pywal's own output files; `config/hypr/switch-theme.sh` (SUPER+SHIFT+T
+   cycles) copies them into `~/.cache/wal/` and records the choice in
+   `~/.cache/wal/current-theme`. Rules: presets are applied ONLY via the
+   switcher; `wal -i` still wins whenever `wallpaper.jpg` exists; never
+   hand-edit files inside `~/.cache/wal/` (they're regenerated); when
+   adding a preset, keep all four file formats (colors-waybar.css,
+   colors-rofi.rasi, colors-wal.vim, colors.sh) in sync; ghostty and VLC
+   stay unthemed by presets (ghostty per item 6's TODO).
 
 When adding a new themed component, follow the CSS `@import` pattern.
 Don't hardcode hex colors that should match the dynamic palette.
