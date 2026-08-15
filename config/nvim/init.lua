@@ -2,7 +2,7 @@
 -- init.lua — Neovim config for the linux-rice.
 --
 -- Single-file, minimal-by-design, no plugin manager. Pulls colors from
--- pywal16's cache (~/.cache/wal/colors.json) so that tree-sitter
+-- pywal16's cache (~/.cache/wal/colors-wal.vim) so that built-in syntax
 -- highlighting + statusline match the rest of the rice (waybar, swaync,
 -- rofi, eww, ghostty all get their palette from the same source).
 --
@@ -42,6 +42,7 @@ vim.opt.showmode = false       -- mode shown in statusline below
 vim.opt.completeopt = { "menu", "menuone", "noselect" }
 vim.opt.ignorecase = true
 vim.opt.smartcase = true
+vim.opt.hlsearch = true        -- highlight matches; <leader>/ clears them
 vim.opt.inccommand = "split"
 vim.opt.updatetime = 250
 vim.opt.timeoutlen = 400
@@ -49,8 +50,10 @@ vim.opt.clipboard = "unnamedplus"  -- wayland clipboard via wl-clipboard
 vim.opt.undofile = true
 vim.opt.swapfile = false
 vim.opt.backup = false
+vim.opt.mouse = "a"
+vim.opt.wildmode = { "longest", "full" }
 
--- ---- Filetype detection + tree-sitter-ish formatting ------------------------
+-- ---- Filetype detection ------------------------------------------------------
 vim.filetype.add({
   extension = {
     rs = "rust",
@@ -209,8 +212,8 @@ vim.opt.statusline = "%!v:lua.statusline()"
 _G.statusline = statusline
 
 -- ---- Keymaps (sensible defaults + a couple of nicities) -------------------
-local map = function(lhs, rhs, desc)
-  vim.keymap.set("n", lhs, rhs, { desc = desc, silent = true })
+local map = function(lhs, rhs, desc, mode)
+  vim.keymap.set(mode or "n", lhs, rhs, { desc = desc, silent = true })
 end
 map("<leader>w", ":write<CR>",       "write")
 map("<leader>q", ":quit<CR>",        "quit")
@@ -218,7 +221,12 @@ map("<leader>x", ":x<CR>",            "write+quit")
 map("<leader>e", ":Lexplore<CR>",    "file explorer (built-in netrw)")
 map("<leader>/", ":nohlsearch<CR>",  "clear search")
 map("<leader>t", ":terminal<CR>",    "open terminal split")
-map("<Esc>",     "<C-\\><C-n>",      "exit terminal mode")  -- also in t-mode
+map("<leader>n", "<cmd>set number! relativenumber!<CR>", "toggle line numbers")
+map("<Esc>",     "<C-\\><C-n>",      "exit terminal mode", "t")
+
+-- Buffer nav
+map("<S-h>", ":bprev<CR>", "previous buffer")
+map("<S-l>", ":bnext<CR>", "next buffer")
 
 -- Window nav like Hyprland (mod + h/j/k/l)
 map("<C-h>", "<C-w>h", "window left")

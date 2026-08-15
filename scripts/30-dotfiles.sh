@@ -65,12 +65,17 @@ mkdir -p "$HOME/.cache/wal"
 
 echo "==> Generating first pywal palette from wallpaper (if set)"
 WALLPAPER="$HOME/.config/hypr/wallpaper.jpg"
+chmod +x "$HOME/.config/hypr/switch-theme.sh"
 if [[ -f "$WALLPAPER" ]]; then
     wal -i "$WALLPAPER" -q
     echo "    wal ran. colors at ~/.cache/wal/colors.sh"
 else
     echo "    no wallpaper at $WALLPAPER — hypr/wallpaper.jpg is a TODO."
     echo "    drop a jpg there and run: wal -i ~/.config/hypr/wallpaper.jpg"
+    # No wallpaper yet: seed the default preset so waybar/rofi/nvim have
+    # colors on first boot. switch-theme.sh writes into ~/.cache/wal/;
+    # running `wal -i` later switches back to wallpaper mode.
+    "$HOME/.config/hypr/switch-theme.sh" mocha
 fi
 
 echo

@@ -25,7 +25,7 @@ exactly. No AUR helpers (paru/yay), no `curl | bash` installers.
 | Cursor theme     | bibata-cursor-theme  | **AUR — makepkg'd**     | Modern variant, 24px |
 | Logout menu      | wlogout              | **AUR — makepkg'd**     |       |
 | Terminal         | ghostty              | pacman (extra)          | primary; shell = fish (pacman) |
-| Code editor      | zed                  | **AUR — makepkg'd**     | primary $EDITOR + $CODE for python/c/c++/lua/java/rust/json |
+| Code editor      | zed                  | **AUR — makepkg'd**     | primary $EDITOR + $CODE for python/c/c++/lua/java/rust/json; ships `config/zed/settings.json` (Mocha theme + Nerd font) |
 | Quick editor     | neovim              | pacman (extra)          | terminal edits, pywal-driven, no plugins |
 | Browser          | brave                | **AUR — brave-bin**     | default; xdg-mime default for http(s)/ftp/html |
 | Media player     | vlc                  | pacman (extra)          | default for video/audio MIME types; ships `config/vlc/vlcrc` (deliberately minimal — decoding and snapshot dir left on VLC's defaults, see file comments) |
@@ -36,9 +36,12 @@ exactly. No AUR helpers (paru/yay), no `curl | bash` installers.
 | GTK theming GUI  | nwg-look             | pacman (extra)          |       |
 | Qt theming       | kvantum / kvantum-qt5 | pacman (extra)         |       |
 | Gaming           | gamemode mangohud lib32-mangohud steam | pacman (extra/multilib) | steam installed by 00-base.sh (multilib) |
+      themes-nvim-zed
+| Themes           | presets + switcher   | shipped files           | wallpaper (pywal) default; mocha/gruvbox/tokyonight presets, SUPER+SHIFT+T cycles |
 | Password manager | bitwarden            | pacman (extra)          | SUPER+V; org.freedesktop.secrets covered by gnome-keyring (already installed) |
 | Bluetooth        | bluez bluez-utils blueman | pacman (extra)     | bluetooth.service enabled by 00-base.sh; blueman-applet autostarts into waybar's tray |
 | Firewall         | ufw                  | pacman (extra)          | default deny incoming / allow outgoing, enabled by 00-base.sh |
+
 
 ---
 
@@ -72,6 +75,34 @@ repos** — these are installed by `scripts/00-base.sh`, **not** built:
 > The policy is "use AUR for whatever has no official-repo equivalent."
 > When the AUR-only list you used to need folds into upstream Arch repos,
 > we stop building that thing from AUR and start using `pacman -S`.
+
+---
+
+## Themes (wallpaper mode + 3 presets)
+
+The default look is **wallpaper mode**: `wal -i` generates the palette
+from `~/.config/hypr/wallpaper.jpg` (see first-boot TODOs). Without a
+wallpaper the rice uses one of three shipped static presets —
+**Catppuccin Mocha** (default), **Gruvbox Dark**, **Tokyo Night** —
+all pre-generated in pywal's own file formats under
+`config/hypr/themes/`, so every themed component (waybar, swaync,
+rofi, eww, wlogout, nvim) picks them up unchanged.
+
+Switching:
+
+| How                                          | Effect                                        |
+|----------------------------------------------|-----------------------------------------------|
+| `SUPER + SHIFT + T`                          | cycle mocha -> gruvbox -> tokyonight         |
+| `~/.config/hypr/switch-theme.sh <name>`      | apply a specific preset                        |
+| `wal -i ~/.config/hypr/wallpaper.jpg`        | back to wallpaper mode (always wins)           |
+
+Notes:
+
+- The selected preset is recorded in `~/.cache/wal/current-theme` and
+  reapplied at session start; presets never overwrite wallpaper mode —
+  the moment `wallpaper.jpg` exists, `wal -i` takes over again.
+- Ghostty keeps its baked Catppuccin Mocha palette (pywal can't feed
+  it yet — same TODO as before), and VLC isn't themed by presets.
 
 ---
 
@@ -286,6 +317,11 @@ file copied by `30-dotfiles.sh` into `~/.local/share/applications/`.
 The handler also covers adjacent types (C headers, JavaScript, TOML,
 YAML, markdown, shell, plaintext).
 
+Zed also ships a rice config at `config/zed/settings.json` (lands at
+`~/.config/zed/` via the blanket copy): Catppuccin Mocha theme (the
+catppuccin extension auto-installs on first launch), JetBrainsMono
+Nerd Font buffers, autosave on focus change, format on save.
+
 **Neovim** is configured at `~/.config/nvim/init.lua` — single-file,
 no plugin manager, pywal-driven colors (matches the rest of the rice).
 Use it for terminal-side edits where you want syntax-aware highlighting
@@ -303,7 +339,10 @@ Bindings:
 |-------------------|----------------------------------------------|
 | `SUPER + E`        | Open Zed                                     |
 | `SUPER + SHIFT + E`| Open Thunar (was SUPER+E before Zed won it)  |
+ themes-nvim-zed
+| `SUPER + SHIFT + T`| Cycle theme preset (mocha/gruvbox/tokyonight) |
 | `SUPER + V`        | Open Bitwarden                               |
+
 
 ### Sudoedit / visudo gotcha
 
@@ -512,6 +551,8 @@ linux-rice/
     │   ├── hyprpaper.conf                  static wallpaper FALLBACK (mpvpaper is default)
     │   ├── hypridle.conf                   idle / lock / suspend listeners
     │   ├── keybinds-extra.conf             empty by default; user-local bind additions
+    │   ├── switch-theme.sh                 preset palette switcher (SUPER+SHIFT+T cycles)
+    │   ├── themes/{mocha,gruvbox,tokyonight}/  pre-generated pywal-format palettes
     │   └── gpu-env.sh                      NVIDIA/Intel/AMD auto-detect env vars (source from shell rc)
     ├── nvim/
     │   └── init.lua                         single-file nvim config; pywal-driven, no plugins
@@ -533,8 +574,13 @@ linux-rice/
     │   └── config                          primary terminal, Catppuccin Mocha baked
     ├── MangoHud/
     │   └── MangoHud.conf                   gaming HUD config
+ themes-nvim-zed
+    ├── zed/
+    │   └── settings.json                   Mocha theme + Nerd font + autosave (~/.config/zed/)
+
     ├── vlc/
     │   └── vlcrc                           minimal; defaults left alone (see file comments)
+    
     ├── wal/
     │   └── templates/
     │       └── colors-rofi.rasi            custom pywal template -> ~/.cache/wal/colors-rofi.rasi
