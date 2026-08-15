@@ -189,6 +189,12 @@ setup_local_repo
 echo "==> Syncing + upgrading system once before AUR builds"
 sudo pacman -Syu --noconfirm
 
+# Add a package here ONLY after confirming it is not in the official
+# repos (archlinux.org/packages search) — policy rule #1. Each entry
+# gets the full print-PKGBUILD + human-approval treatment in build_one;
+# also update the rule-5 audit table in README.md and the AUR table in
+# AGENTS.md in the same change. Packages that move to official repos
+# get removed here and added to 00-base.sh instead.
 PACKAGES=(
     eww
     python-pywal16

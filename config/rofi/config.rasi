@@ -8,13 +8,20 @@
 // `wal -i ~/.config/hypr/wallpaper.jpg` and restart rofi (it'll re-read
 // this file on next launch — no daemon to restart).
 configuration {
+    // What the launcher can do: desktop apps, shell commands, focus an
+    // open window. Add/remove modes here (e.g. "ssh").
     modi: "drun,run,window";
     font: "JetBrainsMono Nerd Font 12";
     show-icons: true;
     icon-theme: "Papirus-Dark";
+    // Terminal used when a .desktop app requests one (Terminal=true).
     terminal: "ghostty";
     drun-display-format: "{name}";
     window-format: "{w} · {c}";
+
+    // Window geometry: centered (location 0), fixed width, 60% screen
+    // height. This is the floating window; inner spacing lives in the
+    // element blocks below.
     location: 0;
     lines: 10;
     columns: 1;
@@ -28,17 +35,23 @@ configuration {
     border: 0;
     border-radius: 12;
     scrollbar: false;
+    hide-scrollbar: true;
+
+    // Fuzzy matching in both directions (typing "gst" hits "ghostty").
     matching: "fuzzy";
     sorting-method: "fuzzy";
-    hide-scrollbar: true;
     cycle: true;
 }
 
 // Import pywal vars (custom pywal user template): @background, @color0..15, @foreground
 @import "../../.cache/wal/colors-rofi.rasi"
 
+// Blank the built-in theme so ONLY the pywal vars + the manual styling
+// below apply (a stock theme would override the palette).
 @theme "/dev/null"
 
+// Base reset: every widget starts transparent; the blocks below paint
+// what should be visible.
 * {
     background: transparent;
 }

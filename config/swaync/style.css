@@ -7,6 +7,14 @@
  */
 @import "../../.cache/wal/colors-waybar.css";   /* pywal GTK colors: @background, @foreground, @color0..15 via @define-color */
 
+/* Class names below are swaync's fixed CSS API (see swaync's wiki);
+ * you can restyle them but not rename them. The three groups:
+ *   .notification*            — the transient popup in the screen corner
+ *   .control-center*, .widget-*, .title, .dnd — the panel opened by
+ *     swaync-client -t (bound in hyprland.conf), matching the `widgets`
+ *     array in config.json
+ *   .notification-row/.notification-group* — the notification list
+ *     inside the control center */
 * {
   all: unset;
   font-family: "JetBrainsMono Nerd Font";
@@ -14,6 +22,7 @@
   color: @foreground;
 }
 
+/* ---- Popup notifications ------------------------------------------------- */
 .notification {
   background: @background;
   border-radius: 12px;
@@ -30,6 +39,7 @@
   margin-right: 12px;
 }
 
+/* ---- Control center panel ------------------------------------------------ */
 .control-center {
   background: @background;
   border: 1px solid @color4;
@@ -81,6 +91,7 @@
   padding: 10px;
 }
 
+/* ---- Notification list (inside the control center) ----------------------- */
 .notification-row {
   margin: 4px 8px;
 }

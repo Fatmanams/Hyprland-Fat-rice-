@@ -8,16 +8,23 @@
  */
 @import "../../.cache/wal/colors-waybar.css";
 
+/* Base font/color for every button. */
 * {
     font-family: "JetBrainsMono Nerd Font";
     font-size: 14px;
     color: @foreground;
 }
 
+/* The wlogout window covers the screen; keep it transparent so only
+ * the buttons are visible over the wallpaper. */
 window {
     background: transparent;
 }
 
+/* Generic rule = all six buttons (lock/logout/suspend/hibernate/
+ * reboot/shutdown from `layout`) share one look. To style one button
+ * differently, target it by id: #lock, #reboot, etc. — the id is the
+ * button's "label" value in `layout` (keep both files in sync). */
 button {
     background: @background;
     color: @foreground;

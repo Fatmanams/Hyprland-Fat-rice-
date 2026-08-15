@@ -7,11 +7,19 @@
 ;;
 ;; Color variables are sourced by eww's FFI mechanism; see eww.scss for
 ;; the mapping. Editing colors here is wrong — update eww.scss instead.
+;;
+;; STRUCTURE: defvars hold state, the defpoll blocks at the bottom
+;; refresh them on a timer, the defwidget describes the layout, and the
+;; defwindow places it on screen. To extend: add a defpoll + a matching
+;; label in bar_main. Started by hyprland.conf's `eww open bar_main`.
 
+;; Initial values — replaced by the defpoll blocks below within 5s.
 (defvar date_time "loading...")
 (defvar cpu_usage 0)
 (defvar mem_usage 0)
 
+;; The widget itself: a horizontal box of labels. The :class names map
+;; to CSS selectors in eww.scss.
 (defwidget bar_main []
   (box :class "bar" :orientation "h" :space-evenly false :spacing 8
     (label :class "clock" :text date_time)
@@ -20,6 +28,8 @@
     (label :class "sep" :text "|")
     (label :class "mem" :text "MEM ${mem_usage}%")))
 
+;; Window placement: anchored top-right, non-exclusive (shares the bar
+;; area with waybar), unfocusable so it never steals keyboard focus.
 (defwindow bar_main
   :monitor 0
   :geometry (geometry :x "0"

@@ -6,6 +6,18 @@
 #
 # Doesn't run any daemons — just lays files down. After this, see the
 # README for the post-install session-start procedure.
+#
+# ADDING A NEW COMPONENT (maintenance checklist):
+#   1. Drop its dotfiles under config/<component>/ in this repo — the
+#      blanket `cp -a` below picks it up automatically, no script edit
+#      needed for the plain case.
+#   2. If the dir does NOT belong under ~/.config/ (like
+#      config/applications/), add a carve-out rm -rf below.
+#   3. If the files contain placeholders (@HOME@ pattern) or need a
+#      binary present to be useful (emacs pattern), add the post-copy
+#      step below and keep it idempotent — this script gets re-run.
+#   4. Wire it into hyprland.conf (exec-once / bind) and document it in
+#      README.md + AGENTS.md.
 
 set -euo pipefail
 
