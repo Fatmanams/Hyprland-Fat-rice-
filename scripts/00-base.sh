@@ -5,10 +5,18 @@
 #   1. Enables [multilib] (needed for lib32-mangohud / Steam's wine deps).
 #   2. Sets MAKEFLAGS to -j$(nproc) and enables ccache in /etc/makepkg.conf
 #      — affects AUR builds done later by 10-aur.sh.
-#   3. Installs the official-repo portion of the rice from pacman.
+#   3. Installs the official-repo portion of the rice from pacman
+#      (labeled groups below — add new packages to the matching group).
+#   4. Post-install: xdg user dirs, bluetooth.service, ufw baseline.
+#   5. OPTIONAL emacs prompt (default: skip).
+#   6. GPU driver layer — NVIDIA proprietary or Intel/AMD Mesa, one or
+#      the other, picked from lspci detection with confirmation.
 #
 # Run this as a normal user (it will sudo internally where needed).
 # Review it before running. Nothing is silent.
+#
+# Idempotent: pacman --needed skips installed packages, the sed edits are
+# grep-guarded, so re-running is safe (the prompts still appear).
 
 set -euo pipefail
 
@@ -45,43 +53,96 @@ else
 fi
 
 echo "==> [3/3] Installing rice packages from official repos"
+# The list is split into labeled groups so a new package lands somewhere
+# obvious. When extending, keep these rules:
+#   - official repos ONLY (policy rule #1); AUR-only packages belong in
+#     10-aur.sh's PACKAGES array instead
+#   - after any add/remove, update the rule-5 audit table in README.md
+#     and the package notes in AGENTS.md
+#   - don't merge the groups back into one transaction; the labels are
+#     the maintenance map (bash can't put comments inside \-continued
+#     lines, which is why each group is its own pacman call)
+
+# Hyprland core + Wayland plumbing (compositor, lock/idle, portals).
 sudo pacman -S --needed --noconfirm \
     hyprland hypridle hyprlock hyprcursor hyprpaper hyprutils hyprlang \
     wayland wayland-protocols \
-    xdg-desktop-portal-hyprland xdg-desktop-portal-gtk \
+    xdg-desktop-portal-hyprland xdg-desktop-portal-gtk
+
+# XDG helpers + Qt runtime/theme bits. Qt apps run Wayland via
+# QT_QPA_PLATFORM set in hyprland.conf; qt6ct/qt5ct pick their themes.
+sudo pacman -S --needed --noconfirm \
     xdg-utils xdg-user-dirs file \
-    qt6-svg qt6-virtualkeyboard qt6-multimedia-ffmpeg qt6ct qt5ct \
+    qt6-svg qt6-virtualkeyboard qt6-multimedia-ffmpeg qt6ct qt5ct
+
+# Login manager, launcher, bar, notifications, screenshot/clipboard,
+# night light.
+sudo pacman -S --needed --noconfirm \
     sddm \
     rofi-wayland \
     swaync \
     waybar kanshi \
     grim slurp wl-clipboard \
-    wlsunset \
-    ghostty kitty alacritty \
-    fish \
-    nano neovim \
+    wlsunset
+
+# Terminals + shell. ghostty is the primary terminal (see its config);
+# kitty/alacritty ship as alternates.
+sudo pacman -S --needed --noconfirm ghostty kitty alacritty fish
+
+# Editors. nano exists purely as the sudoedit/visudo fallback (see the
+# README "Sudoedit / visudo gotcha"); neovim is the terminal editor.
+sudo pacman -S --needed --noconfirm nano neovim
+
+# Session plumbing: polkit auth agents, keyring, network, audio.
+sudo pacman -S --needed --noconfirm \
     polkit polkit-gnome polkit-kde-agent gnome-keyring seahorse \
     NetworkManager \
-    pipewire wireplumber \
+    pipewire wireplumber
+
+# Fonts. ttf-jetbrains-mono-nerd is the mono used by ghostty/nvim/zed.
+sudo pacman -S --needed --noconfirm \
     noto-fonts noto-fonts-emoji noto-fonts-cjk ttf-liberation ttf-dejavu \
     ttf-jetbrains-mono-nerd ttf-nerd-fonts-symbols \
-    fontconfig \
+    fontconfig
+
+# Toolchain + everyday CLI tools (base-devel & friends are also needed
+# by the AUR builds in 10-aur.sh).
+sudo pacman -S --needed --noconfirm \
     jq curl wget git base-devel \
     gcc clang make cmake meson ninja pkgconf \
-    imagemagick ffmpeg \
-    pciutils mesa-demos \
-    hicolor-icon-theme adwaita-icon-theme papirus-icon-theme sound-theme-freedesktop \
-    gamemode gamescope mangohud lib32-mangohud steam \
-    nwg-look kvantum kvantum-qt5 \
-    swww cliphist \
     ripgrep fd zoxide chafa \
     poppler \
-    yazi thunar tumbler thunar-archive-plugin thunar-volman gvfs \
-    vlc \
-    bitwarden \
-    bluez bluez-utils blueman \
-    ufw \
-    kde-cli-tools
+    imagemagick ffmpeg \
+    pciutils mesa-demos
+
+# Icon/sound themes + GTK/Qt theming GUIs (nwg-look = GTK, kvantum = Qt).
+sudo pacman -S --needed --noconfirm \
+    hicolor-icon-theme adwaita-icon-theme papirus-icon-theme sound-theme-freedesktop \
+    nwg-look kvantum kvantum-qt5
+
+# Gaming stack (gamemoded user unit is wired by 40-gaming.sh).
+sudo pacman -S --needed --noconfirm \
+    gamemode gamescope mangohud lib32-mangohud steam
+
+# Wallpaper daemon for static images (mpvpaper, the animated-wallpaper
+# default, is AUR — see 10-aur.sh) + clipboard history manager.
+sudo pacman -S --needed --noconfirm swww cliphist
+
+# File managers: yazi (TUI) + thunar (GUI) with thumbnails/archives/
+# volume mounting support.
+sudo pacman -S --needed --noconfirm \
+    yazi thunar tumbler thunar-archive-plugin thunar-volman gvfs
+
+# Apps: media player, password manager (SUPER+V bind), kde-cli-tools
+# (kdialog etc. for Qt apps running outside Plasma).
+sudo pacman -S --needed --noconfirm vlc bitwarden kde-cli-tools
+
+# Bluetooth stack + tray applet (blueman-applet autostarts from
+# hyprland.conf; service enabled in [3.1/4] below).
+sudo pacman -S --needed --noconfirm bluez bluez-utils blueman
+
+# Firewall (baseline rules set up in [3.1/4] below).
+sudo pacman -S --needed --noconfirm ufw
 
 echo "==> [3.1/4] Post-install setup: user dirs, Bluetooth, firewall"
 xdg-user-dirs-update
@@ -100,6 +161,18 @@ sudo ufw --force enable
 # comes back after reboot only if ufw.service is enabled (ArchWiki).
 sudo systemctl enable --now ufw.service
 echo "    ufw active and enabled at boot: deny incoming, allow outgoing."
+
+echo "==> [3.2/4] Optional: Emacs"
+# Emacs is OFF by default — the rice's editors are Zed (GUI) and nvim
+# (terminal). Opt in here if you also want Emacs; its config ships at
+# config/emacs/init.el and 30-dotfiles.sh seeds it only when installed.
+read -r -p "    Install emacs (official extra repo, pgtk/Wayland build)? [y/N] " yn
+if [[ "$yn" =~ ^[Yy]$ ]]; then
+    sudo pacman -S --needed --noconfirm emacs
+    echo "    emacs installed."
+else
+    echo "    skipped emacs."
+fi
 
 echo "==> [3.5/4] GPU driver layer (NVIDIA or Intel/AMD — pick one)"
 GPU_CHOSEN=0

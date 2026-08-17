@@ -3,6 +3,12 @@
     // to ~/.cache/wal/colors-waybar.css via the `wal -i` exec-once in
     // hyprland.conf; style.css @import's that. To change colors: swap the
     // wallpaper, re-run `wal -i <path>`, killall waybar, restart waybar.
+    //
+    // MAINTENANCE: layout = the three modules-* arrays below; each module
+    // gets its own config block named after it. Adding a module = add its
+    // name to one of the arrays AND add the block here. Icons are Nerd
+    // Font glyphs (ttf-jetbrains-mono-nerd / ttf-nerd-fonts-symbols from
+    // 00-base.sh) — squares mean the font is missing.
     "layer": "top",
     "position": "top",
     "height": 30,
@@ -10,6 +16,9 @@
     "modules-left": ["hyprland/workspaces", "hyprland/window"],
     "modules-center": ["hyprland/window"],
     "modules-right": ["pulseaudio", "network", "cpu", "memory", "battery", "clock", "tray"],
+
+    // Workspace switcher: roman numerals, click to jump. Add more
+    // format-icons entries if you run more than 10 workspaces.
     "hyprland/workspaces": {
         "format": "{icon}",
         "on-click": "activate",
@@ -27,6 +36,8 @@
             "default": "•"
         }
     },
+    // Focused window title. `rewrite` maps title suffixes to cleaner
+    // labels — extend the regex list here for new apps.
     "hyprland/window": {
         "format": "{}",
         "max-length": 50,
@@ -36,6 +47,7 @@
             "(.*) - Steam": " $1"
         }
     },
+    // Volume via PipeWire's wpctl (installed by 00-base.sh). Click to mute.
     "pulseaudio": {
         "format": "{volume}% {icon}",
         "format-muted": "ﱝ muted",
@@ -45,12 +57,16 @@
         },
         "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
     },
+    // Wifi/ethernet status. Reads from NetworkManager (installed by
+    // 00-base.sh; enable once with: systemctl enable --now NetworkManager).
     "network": {
         "format-wifi": " {essid} ({signalStrength}%)",
         "format-ethernet": " {ipaddr}/{cidr}",
         "format-disconnected": " disconnected",
         "tooltip-format": "{ifname} {ipaddr}/{cidr} via {gwaddr}"
     },
+    // Load monitors — delete a block (and its name in modules-right)
+    // to remove it from the bar.
     "cpu": {
         "format": " {usage}%",
         "tooltip": false
@@ -58,6 +74,8 @@
     "memory": {
         "format": " {percentage}%"
     },
+    // Battery: `states` thresholds map to CSS classes in style.css
+    // (.warning / .critical). Harmless on a desktop with no battery.
     "battery": {
         "format": "{icon} {capacity}%",
         "format-icons": ["", "", "", "", "", "", "", "", "", ""],
@@ -67,10 +85,13 @@
             "critical": 15
         }
     },
+    // Clock with a hover calendar tooltip.
     "clock": {
         "format": " {:%Y-%m-%d  %H:%M}",
         "tooltip-format": "<tt>{calendar}</tt>"
     },
+    // System tray — blueman-applet (Bluetooth, autostarted from
+    // hyprland.conf) and any StatusNotifier app land here.
     "tray": {
         "spacing": 8
     }

@@ -6,6 +6,9 @@
  */
 @import "../../.cache/wal/colors-waybar.css";
 
+/* ---- Base ---------------------------------------------------------------
+ * `all: unset` strips GTK's default widget styling so ONLY the rules
+ * below apply. Font applies to every module. */
 * {
     font-family: "JetBrainsMono Nerd Font";
     font-size: 13px;
@@ -13,12 +16,15 @@
     all: unset;
 }
 
+/* The bar itself (one waybar window per monitor). */
 window#waybar {
     background: @background;
     color: @foreground;
     border-bottom: 1px solid @color1;
 }
 
+/* ---- Workspaces ---------------------------------------------------------
+ * Selectors map to the hyprland/workspaces module in `config`. */
 #workspaces {
     padding: 0 6px;
 }
@@ -42,11 +48,18 @@ window#waybar {
     color: @background;
 }
 
+/* Focused window title (hyprland/window module). */
 #window {
     padding: 0 12px;
     color: @color2;
 }
 
+/* ---- Right-side modules --------------------------------------------------
+ * One accent color per module (color3..7) so they read as distinct
+ * groups. The #name selectors must match the module names in `config`;
+ * adding a module there without a rule here leaves it unstyled.
+ * battery.warning/.critical are set by the `states` thresholds in
+ * `config` — keep both files in sync when changing thresholds. */
 #pulseaudio { padding: 0 10px; color: @color3; }
 #network    { padding: 0 10px; color: @color4; }
 #cpu        { padding: 0 10px; color: @color5; }
@@ -57,6 +70,9 @@ window#waybar {
 #battery.charging { color: @color2; }
 #clock       { padding: 0 12px; color: @foreground; font-weight: bold; }
 
+/* ---- Tray ----------------------------------------------------------------
+ * StatusNotifier icons (blueman-applet etc.). The menu rules style the
+ * right-click context menus some applets open. */
 #tray {
     padding: 0 8px;
 }

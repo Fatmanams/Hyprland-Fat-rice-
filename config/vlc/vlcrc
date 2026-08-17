@@ -1,11 +1,16 @@
 [core]
 
-# snapshot-path is deliberately NOT set: VLC does no tilde (~) expansion
-# on this option (verified against VLC 3.0's src/video_output/snapshot.c
-# — it vlc_stat()s the raw string), so a ~/... value would silently
-# create a literal '~' file instead of snapshotting into your home.
-# The unset default is the user Pictures dir (config_GetUserDir), which
-# 00-base.sh's xdg-user-dirs-update guarantees exists.
+# Snapshot location. VLC does NO tilde (~) expansion on snapshot-path
+# (verified against VLC 3.0's src/video_output/snapshot.c — it
+# vlc_stat()s the raw string), so @HOME@ is substituted with the real
+# home dir by 30-dotfiles.sh at install time. VLC also does NOT create
+# the directory itself — 30-dotfiles.sh mkdirs it.
+snapshot-path=@HOME@/Pictures/vlc-snapshots
+
+# Sequential numbers (vlcsnap-0001.png, ...) instead of timestamps —
+# readable order, and two same-second snapshots can't overwrite each
+# other. Verified option name via `vlc -H --advanced`.
+snapshot-sequential=1
 
 # avcodec-hw defaults to "any" (auto hardware-decode with software
 # fallback) — verified against `vlc -H --advanced` output directly, not

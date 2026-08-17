@@ -6,8 +6,11 @@
  */
 @import "../../.cache/wal/colors-waybar.css";
 
+/* Base reset; the .class names below map 1:1 to the :class values in
+ * eww.yuck — rename them in BOTH files together. */
 * { all: unset; font-family: "JetBrainsMono Nerd Font"; font-size: 13px; }
 
+/* The widget's outer box. */
 .bar {
   background: @background;
   border: 1px solid @color1;
