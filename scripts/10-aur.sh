@@ -25,6 +25,8 @@
 #     zed                    https://aur.archlinux.org/zed.git
 #     brave-bin              https://aur.archlinux.org/brave-bin.git
 #     mpvpaper               https://aur.archlinux.org/mpvpaper.git
+#     vscode-langservers-extracted
+#                            https://aur.archlinux.org/vscode-langservers-extracted.git
 #
 #     (Zed is NATIVE AUR-only — no curl|bash installer, no official repo —
 #     so per the policy it goes through this same reviewed-makepkg pipeline.
@@ -43,6 +45,17 @@
 #     libmpv.so + libwayland (mpv is pulled in automatically by makepkg -s),
 #     optdepends socat for socket control, no install hooks, no curl|bash,
 #     no suspicious URLs. No red flags.)
+#
+#     (vscode-langservers-extracted: the HTML/CSS/JSON/ESLint language
+#     servers extracted from VSCode, used by Zed and by Emacs' eglot —
+#     the rest of the LSP stack is official-repo and installed by
+#     00-base.sh. Reviewed PKGBUILD 4.10.0-1 against the live AUR copy:
+#     single source, the upstream npm registry tarball, pinned with a
+#     sha256sum; package() is a local `npm i -g` into $pkgdir with the
+#     cache confined to $srcdir, plus a chown and a license install. No
+#     build(), no install hooks, no curl|bash. Note it IS an npm package,
+#     so the tarball vendors its own node_modules — that's inherent to
+#     the upstream distribution, not something the PKGBUILD adds.)
 #
 #
 # Items your original policy listed as AUR-only but which are now in
@@ -197,6 +210,7 @@ PACKAGES=(
     zed
     brave-bin
     mpvpaper
+    vscode-langservers-extracted
 )
 
 for p in "${PACKAGES[@]}"; do
