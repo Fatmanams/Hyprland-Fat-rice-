@@ -56,6 +56,10 @@ Scripts run on Arch; do not assume Windows tools exist on the target.
 |                        | CDN (not curl\|bash). Read the PKGBUILD anyway.                    |
 | `mpvpaper`             | Animated wallpaper daemon. Pinned GitHub release tarball + b2sum,  |
 |                        | meson build, deps libmpv/wayland (mpv auto-pulled). No red flags.  |
+| `vscode-langservers-extracted` | HTML/CSS/JSON/ESLint language servers for Zed + Emacs      |
+|                        | eglot. npm registry tarball + sha256sum, `npm i -g` into `$pkgdir` |
+|                        | with the cache confined to `$srcdir`. No build(), no hooks. The    |
+|                        | rest of the LSP stack is official-repo (`00-base.sh` step 4).      |
 
 When a package leaves AUR for official repos (the trend), **remove it
 from `10-aur.sh` and add it to `00-base.sh`'s `pacman -S` list**. Don't
@@ -106,9 +110,14 @@ Every AUR-only build goes through `scripts/10-aur.sh`'s `build_one()`.
     │   ├── hypridle.conf       idle / lock / suspend listeners
     │   ├── switch-theme.sh     preset palette switcher (SUPER+SHIFT+T cycles)
     │   ├── themes/{mocha,gruvbox,tokyonight}/   pre-generated pywal-format palettes
+    │   │                        (each carries ALL 5 formats: waybar.css, rofi.rasi,
+    │   │                         wal.vim, colors.el, colors.sh)
     │   └── gpu-env.sh          NVIDIA/Intel/AMD auto-detect env shim (source from shell rc)
     ├── nvim/
     │   └── init.lua            single-file nvim config; pywal-driven, no plugins
+    ├── emacs/
+    │   └── init.el             OPT-IN single-file Emacs config; pywal-driven,
+    │                           no package manager, LSP via built-in eglot
     ├── waybar/{config,style.css}
     ├── swaync/{config.json,style.css}
     ├── rofi/config.rasi
@@ -116,10 +125,10 @@ Every AUR-only build goes through `scripts/10-aur.sh`'s `build_one()`.
     ├── wlogout/{layout,style.css}
     ├── ghostty/config
     ├── MangoHud/MangoHud.conf
- themes-nvim-zed
     ├── zed/settings.json       Mocha theme + Nerd font + autosave -> ~/.config/zed/
     ├── vlc/vlcrc                        minimal; decoding + snapshot dir left on VLC's defaults
     ├── wal/templates/colors-rofi.rasi   custom pywal user template -> ~/.cache/wal/colors-rofi.rasi
+    ├── wal/templates/colors.el          custom pywal user template -> ~/.cache/wal/colors.el (emacs)
     └── applications/
         └── zed-handler.desktop  registered via xdg-mime default in hyprland.conf
 ```
@@ -200,6 +209,8 @@ coverage if it isn't already (CI catches it otherwise).
 | Change the code editor                        | `config/hypr/hyprland.conf` (`$editor`, `bind = $mod, E`) + `config/applications/zed-handler.desktop` (or replace with new one) |
 | Add a new AUR-only package                    | `scripts/10-aur.sh` (`PACKAGES=(...)` array) **after** confirming via `archlinux.org/packages/?q=<name>` that it's not in official repos |
 | Move a package from AUR to official           | remove from `scripts/10-aur.sh` `PACKAGES=()`, add to `scripts/00-base.sh`'s `pacman -S` block |
+| Add/remove a language server                  | `scripts/00-base.sh` (step 4 block) if official-repo, else `scripts/10-aur.sh` |
+| Change the Emacs config                       | `config/emacs/init.el` (opt-in; install prompt is `00-base.sh` step 8) |
 | Edit gaming HUD defaults                      | `config/MangoHud/MangoHud.conf`                              |
 | Change notification behavior                  | `config/swaync/config.json` + `config/swaync/style.css`      |
 | Change status bar layout                      | `config/waybar/config` + `config/waybar/style.css`           |
@@ -232,7 +243,10 @@ Color theming is **pywal16-driven, single source of truth**. The flow:
    `30-dotfiles.sh`'s blanket `config/` install step so the template
    reaches `~/.config/wal/templates/` where `wal` reads it.
 5. Neovim sources `~/.cache/wal/colors-wal.vim` at editor open (falls back
-   to a baked Catppuccin Mocha palette if pywal hasn't run yet)
+   to a baked Catppuccin Mocha palette if pywal hasn't run yet). Emacs
+   (opt-in) does the same with `~/.cache/wal/colors.el`, generated from
+   the custom template at `config/wal/templates/colors.el` — same
+   fallback, same `config/wal/templates/` install requirement as item 4.
 6. Ghostty is the outlier — its config bakes Catppuccin Mocha because
    ghostty doesn't `@import` CSS. A post-wal hook that regenerates a
    ghostty colors.conf from pywal is a documented TODO in `README.md`'s
@@ -245,9 +259,11 @@ Color theming is **pywal16-driven, single source of truth**. The flow:
    `~/.cache/wal/current-theme`. Rules: presets are applied ONLY via the
    switcher; `wal -i` still wins whenever `wallpaper.jpg` exists; never
    hand-edit files inside `~/.cache/wal/` (they're regenerated); when
-   adding a preset, keep all four file formats (colors-waybar.css,
-   colors-rofi.rasi, colors-wal.vim, colors.sh) in sync; ghostty and VLC
-   stay unthemed by presets (ghostty per item 6's TODO).
+   adding a preset, keep all five file formats (colors-waybar.css,
+   colors-rofi.rasi, colors-wal.vim, colors.el, colors.sh) in sync AND
+   listed in `switch-theme.sh`'s `cp -f` — a format missing from either
+   place leaves that consumer on a stale palette after a switch; ghostty
+   and VLC stay unthemed by presets (ghostty per item 6's TODO).
 
 When adding a new themed component, follow the CSS `@import` pattern.
 Don't hardcode hex colors that should match the dynamic palette.

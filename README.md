@@ -27,6 +27,9 @@ exactly. No AUR helpers (paru/yay), no `curl | bash` installers.
 | Terminal         | ghostty              | pacman (extra)          | primary; shell = fish (pacman) |
 | Code editor      | zed                  | **AUR — makepkg'd**     | primary $EDITOR + $CODE for python/c/c++/lua/java/rust/json; ships `config/zed/settings.json` (Mocha theme + Nerd font) |
 | Quick editor     | neovim              | pacman (extra)          | terminal edits, pywal-driven, no plugins |
+| Alt editor       | emacs-wayland        | pacman (extra)          | **opt-in** (00-base.sh prompts); PGTK/native-Wayland build; pywal-driven, no package manager, LSP via built-in eglot |
+| Language servers | pyright rust-analyzer clang lua-language-server bash-language-server gopls typescript-language-server | pacman (extra) | plain `$PATH` binaries; used by Zed + Emacs/eglot |
+| HTML/CSS/JSON LSP | vscode-langservers-extracted | **AUR — makepkg'd** | the only LSP not in official repos |
 | Browser          | brave                | **AUR — brave-bin**     | default; xdg-mime default for http(s)/ftp/html |
 | Media player     | vlc                  | pacman (extra)          | default for video/audio MIME types; ships `config/vlc/vlcrc` (deliberately minimal — decoding and snapshot dir left on VLC's defaults, see file comments) |
 | TUI file mgr     | yazi                 | pacman (extra)          | SUPER+SHIFT+E |
@@ -36,7 +39,6 @@ exactly. No AUR helpers (paru/yay), no `curl | bash` installers.
 | GTK theming GUI  | nwg-look             | pacman (extra)          |       |
 | Qt theming       | kvantum / kvantum-qt5 | pacman (extra)         |       |
 | Gaming           | gamemode mangohud lib32-mangohud steam | pacman (extra/multilib) | steam installed by 00-base.sh (multilib) |
-      themes-nvim-zed
 | Themes           | presets + switcher   | shipped files           | wallpaper (pywal) default; mocha/gruvbox/tokyonight presets, SUPER+SHIFT+T cycles |
 | Password manager | bitwarden            | pacman (extra)          | SUPER+V; org.freedesktop.secrets covered by gnome-keyring (already installed) |
 | Bluetooth        | bluez bluez-utils blueman | pacman (extra)     | bluetooth.service enabled by 00-base.sh; blueman-applet autostarts into waybar's tray |
@@ -59,6 +61,7 @@ official Arch repos and installed by `scripts/00-base.sh`.
 | `zed`                  | `<https://aur.archlinux.org/zed.git>`    | **Review carefully**: large Rust project, many cargo crates, may pull release assets during build |
 | `brave-bin`            | `<https://aur.archlinux.org/brave-bin.git>` | Precompiled Brave in .deb form, repackaged to .pkg.tar.zst. Downloads from Brave's signed CDN (NOT curl\|bash). Read the PKGBUILD anyway. |
 | `mpvpaper`             | `<https://aur.archlinux.org/mpvpaper.git>` | Video wallpaper daemon (v1.9). Pinned GitHub release tarball with b2sum, meson/ninja build, deps libmpv + libwayland (mpv auto-pulled by makepkg -s), optdep socat. No install hooks, no curl\|bash, no red flags. |
+| `vscode-langservers-extracted` | `<https://aur.archlinux.org/vscode-langservers-extracted.git>` | HTML/CSS/JSON/ESLint language servers (v4.10.0), used by Zed and Emacs' eglot. Source is the upstream npm registry tarball pinned with a sha256sum; `package()` is `npm i -g` into `$pkgdir` with the npm cache confined to `$srcdir`, plus chown + license install. No `build()`, no install hooks, no curl\|bash. It vendors node_modules — inherent to the npm tarball, not added by the PKGBUILD. |
 
 **Packages you originally listed as AUR-only that are now in official
 repos** — these are installed by `scripts/00-base.sh`, **not** built:
@@ -86,7 +89,9 @@ wallpaper the rice uses one of three shipped static presets —
 **Catppuccin Mocha** (default), **Gruvbox Dark**, **Tokyo Night** —
 all pre-generated in pywal's own file formats under
 `config/hypr/themes/`, so every themed component (waybar, swaync,
-rofi, eww, wlogout, nvim) picks them up unchanged.
+rofi, eww, wlogout, nvim, emacs) picks them up unchanged. Each preset
+dir carries all five formats the rice consumes — `colors-waybar.css`,
+`colors-rofi.rasi`, `colors-wal.vim`, `colors.el`, `colors.sh`.
 
 Switching:
 
@@ -197,7 +202,12 @@ chmod +x scripts/*.sh
 #    runs xdg-user-dirs-update (so ~/Pictures etc. exist — VLC's
 #    default snapshot dir is the Pictures dir), enables
 #    bluetooth.service, and sets up the ufw firewall baseline
-#    (deny incoming / allow outgoing).
+#    (deny incoming / allow outgoing). Also installs the language-server
+#    stack (Zed + Emacs/eglot use it).
+#
+#    Two interactive prompts near the end: the CPU `performance`
+#    governor (cpupower — read the tradeoff comment in the script) and
+#    the OPTIONAL emacs-wayland install. Both default to no.
 ./scripts/00-base.sh
 
 # 2. AUR builds — reviewed PKGBUILD, plain makepkg (build only),
@@ -328,6 +338,31 @@ Use it for terminal-side edits where you want syntax-aware highlighting
 without popping a GUI window: script hacks, dockerfile edits, quick
 patches. It's not your IDE — Zed is.
 
+**Emacs** is **opt-in** — `00-base.sh`'s last step prompts for it and
+defaults to no. If you accept, it installs `emacs-wayland` (the PGTK
+build, which talks Wayland natively instead of going through XWayland;
+same reasoning as `QT_QPA_PLATFORM=wayland` for Qt apps). The config at
+`~/.config/emacs/init.el` mirrors the nvim philosophy: single file, no
+package manager, no third-party packages, pywal-driven colors (from
+`~/.cache/wal/colors.el`) with a Catppuccin Mocha fallback.
+
+For LSP, use the built-in **eglot** (`M-x eglot` in a project buffer) —
+it's part of Emacs core since 29, so nothing extra to install. The
+servers themselves come from `00-base.sh` (pyright, rust-analyzer,
+clangd, lua-language-server, bash-language-server, gopls,
+typescript-language-server) plus `10-aur.sh` for the HTML/CSS/JSON/ESLint
+set. Those same binaries are what Zed picks up off `$PATH`.
+
+Emacs bindings use the `C-c` prefix (Emacs' reserved user-binding space,
+so nothing built-in is clobbered — deliberately not a copy of nvim's
+SPC-leader scheme, which would shadow self-insert here):
+`C-c w` save, `C-c q` kill buffer, `C-c e` dired-jump, `C-c b` switch
+buffer, `C-c n` toggle line numbers.
+
+If `~/.emacs.d` already exists on your box, Emacs ignores
+`~/.config/emacs/` entirely (XDG precedence rules) — move the old dir
+aside for this config to take effect.
+
 **Ghostty** is the primary terminal. Its config at
 `~/.config/ghostty/config` bakes Catppuccin Mocha as a fallback palette
 (pywal16 doesn't yet write a ghostty-compatible config file; see the
@@ -339,7 +374,6 @@ Bindings:
 |-------------------|----------------------------------------------|
 | `SUPER + E`        | Open Zed                                     |
 | `SUPER + SHIFT + E`| Open Thunar (was SUPER+E before Zed won it)  |
- themes-nvim-zed
 | `SUPER + SHIFT + T`| Cycle theme preset (mocha/gruvbox/tokyonight) |
 | `SUPER + V`        | Open Bitwarden                               |
 
@@ -556,6 +590,8 @@ linux-rice/
     │   └── gpu-env.sh                      NVIDIA/Intel/AMD auto-detect env vars (source from shell rc)
     ├── nvim/
     │   └── init.lua                         single-file nvim config; pywal-driven, no plugins
+    ├── emacs/
+    │   └── init.el                          opt-in single-file Emacs config; eglot for LSP
     ├── waybar/
     │   ├── config                          top bar layout
     │   └── style.css                       pywal16 @import colors
@@ -574,7 +610,6 @@ linux-rice/
     │   └── config                          primary terminal, Catppuccin Mocha baked
     ├── MangoHud/
     │   └── MangoHud.conf                   gaming HUD config
- themes-nvim-zed
     ├── zed/
     │   └── settings.json                   Mocha theme + Nerd font + autosave (~/.config/zed/)
 
@@ -583,7 +618,8 @@ linux-rice/
     
     ├── wal/
     │   └── templates/
-    │       └── colors-rofi.rasi            custom pywal template -> ~/.cache/wal/colors-rofi.rasi
+    │       ├── colors-rofi.rasi            custom pywal template -> ~/.cache/wal/colors-rofi.rasi
+    │       └── colors.el                   custom pywal template -> ~/.cache/wal/colors.el (emacs)
     └── applications/
         └── zed-handler.desktop             xdg-mime default for python/c/c++/lua/java/rust/json
 ```

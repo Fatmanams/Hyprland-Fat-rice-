@@ -5,7 +5,13 @@
 # palette contract). Normally pywal16 generates them from the wallpaper
 # (`wal -i`); this script instead applies one of the static presets
 # under themes/ (next to this file), overwriting the same files so
-# waybar / swaync / rofi / eww / wlogout / nvim all pick them up.
+# waybar / swaync / rofi / eww / wlogout / nvim / emacs all pick them up.
+#
+# Each preset dir MUST carry every pywal output format the rice consumes
+# (colors-waybar.css, colors-rofi.rasi, colors-wal.vim, colors.el,
+# colors.sh) — see AGENTS.md's palette contract. Adding a consumer that
+# reads a new format means adding that file to all three presets AND to
+# the cp below, or theme switching leaves it on a stale palette.
 #
 # Usage:
 #   switch-theme.sh <name>   apply a preset: mocha | gruvbox | tokyonight
@@ -34,6 +40,7 @@ apply() {
     cp -f "$THEME_SRC/$name/colors-waybar.css" \
           "$THEME_SRC/$name/colors-rofi.rasi" \
           "$THEME_SRC/$name/colors-wal.vim" \
+          "$THEME_SRC/$name/colors.el" \
           "$THEME_SRC/$name/colors.sh" \
           "$WAL_DIR/"
     echo "$name" > "$MARKER"
