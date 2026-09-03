@@ -364,6 +364,12 @@ Use it for terminal-side edits where you want syntax-aware highlighting
 without popping a GUI window: script hacks, dockerfile edits, quick
 patches. It's not your IDE — Zed is.
 
+F2 toggles two editing personalities in nvim: **supermode** (the default —
+plain modal vim) and **fats mode** (nvim stays in Insert permanently;
+`Ctrl-O` is one-shot Normal, `Ctrl-S` saves, `Ctrl-Z` undoes, and
+Ctrl-C/Ctrl-V work via the system clipboard). The active mode shows in
+the statusline as `FATS`/`SUPER`.
+
 **Emacs** is **opt-in** — `00-base.sh`'s last step prompts for it and
 defaults to no. If you accept, it installs `emacs-wayland` (the PGTK
 build, which talks Wayland natively instead of going through XWayland;
@@ -385,6 +391,13 @@ SPC-leader scheme, which would shadow self-insert here):
 `C-c w` save, `C-c q` kill buffer, `C-c e` dired-jump, `C-c b` switch
 buffer, `C-c n` toggle line numbers.
 
+F2 mirrors nvim's modes with two hand-rolled minor modes (no packages,
+same as the rest of this file): **supermode** (the startup default — a
+minimal vim-ish motion layer: `h/j/k/l`, `w`/`b` word motion, `i` drops
+into a self-inserting phase, `<escape>`/`C-g` back to motion) and
+**fats-mode** (stock Emacs feel with `C-s` save, `C-z` undo, `C-a`
+select-all). The mode line shows `SUPER` / `super/insert` / `FATS`.
+
 If `~/.emacs.d` already exists on your box, Emacs ignores
 `~/.config/emacs/` entirely (XDG precedence rules) — move the old dir
 aside for this config to take effect.
@@ -403,6 +416,7 @@ Bindings:
 | `SUPER + SHIFT + T`| Cycle theme preset (mocha/gruvbox/tokyonight) |
 | `SUPER + V`        | Open Bitwarden                               |
 | `SUPER + SHIFT + M`| Prompt for a URL in rofi, play it in VLC (YouTube etc. resolved by yt-dlp, Twitch by streamlink — see `config/vlc/vlc-open`) |
+| `F2` (in nvim/emacs) | Toggle fats mode <-> supermode (insert-forever readline style vs. modal/motion); statusbar/mode-line shows the active mode |
 
 
 ### Sudoedit / visudo gotcha

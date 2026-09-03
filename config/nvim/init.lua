@@ -202,10 +202,11 @@ local function statusline()
     t   = " TERM ",
   }
   local m = mode_map[vim.fn.mode()] or " " .. vim.fn.mode() .. " "
+  local km = (_G.rice_fats_mode) and " FATS " or " SUPER "
   local file = "%f"
   local mod  = "%m"
   local line = "  %l/%L:%c"
-  return m .. " " .. file .. mod .. line .. "%=" .. (wal_enabled and " [pywal] " or " [mocha] ") .. "%y "
+  return m .. km .. " " .. file .. mod .. line .. "%=" .. (wal_enabled and " [pywal] " or " [mocha] ") .. "%y "
 end
 
 vim.opt.statusline = "%!v:lua.statusline()"
@@ -227,6 +228,43 @@ map("<Esc>",     "<C-\\><C-n>",      "exit terminal mode", "t")
 -- Buffer nav
 map("<S-h>", ":bprev<CR>", "previous buffer")
 map("<S-l>", ":bnext<CR>", "next buffer")
+
+-- ---- fats mode <-> supermode (F2) ------------------------------------------
+-- supermode is this file's DEFAULT: plain vim modal editing — nothing to
+-- build.
+-- fats mode is for people who hate modes: nvim stays in Insert
+-- "permanently" — Esc stops leaving it (mapped to a no-op) and every
+-- buffer re-enters Insert when you land on it. Ctrl-O still runs one
+-- Normal command and drops you back. The Ctrl-S save / Ctrl-Z undo maps
+-- give it the GUI-app feel (Ctrl-C/Ctrl-V already work via
+-- clipboard=unnamedplus above). The active mode shows in the statusline
+-- (FATS / SUPER), driven by the _G.rice_fats_mode flag.
+--
+-- NOTE: this is hand-rolled because Neovim REMOVED Vim's 'insertmode'
+-- option (setting it dies with E519 "Option not supported" — verified on
+-- nvim 0.11). The Esc-noop + startinsert-on-BufEnter pair below is the
+-- same user-facing contract, not a fallback hack.
+local fats_group = vim.api.nvim_create_augroup("RiceFatsMode", { clear = true })
+_G.rice_fats_mode = false
+_G.rice_toggle_fats = function()
+  _G.rice_fats_mode = not _G.rice_fats_mode
+  if _G.rice_fats_mode then
+    vim.keymap.set("i", "<Esc>", "<Nop>", { desc = "fats mode: stay in Insert" })
+    vim.api.nvim_create_autocmd("BufEnter", {
+      group = fats_group,
+      callback = function() vim.cmd("startinsert") end,
+    })
+    vim.cmd("startinsert")
+    print("fats mode — always Insert; Ctrl-O one-shot Normal, F2 back to supermode")
+  else
+    pcall(vim.keymap.del, "i", "<Esc>")
+    vim.api.nvim_clear_autocmds({ group = fats_group })
+    print("supermode — plain modal vim")
+  end
+end
+map("<F2>",  _G.rice_toggle_fats, "toggle fats/supermode", { "n", "i" })
+map("<C-s>", "<C-o>:write<CR>", "save (fats mode; harmless in normal Insert)", "i")
+map("<C-z>", "<C-o>u", "undo from Insert (fats mode)", "i")
 
 -- Window nav like Hyprland (mod + h/j/k/l)
 map("<C-h>", "<C-w>h", "window left")
