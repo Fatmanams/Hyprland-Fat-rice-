@@ -195,6 +195,48 @@ Two layers:
 
 ---
 
+## Step 0: installing Arch itself (archinstall, from the ISO)
+
+The scripts in `scripts/` run on an ALREADY-INSTALLED Arch system. If
+the box in front of you is still the live ISO, this is how you get from
+there to here. Everything in this section runs on the ISO, as root.
+
+1. Get online on the ISO. Ethernet just works; WiFi via `iwctl`
+   (`station wlan0 connect "SSID"`).
+2. Launch the guided installer: `archinstall`
+3. The picks in archinstall that matter because this repo's scripts
+   assume them downstream:
+   - **Profile: minimal.** No desktop profile — Hyprland and everything
+     else come from `scripts/00-base.sh`. Picking a desktop profile here
+     means a whole DE left installed alongside the rice.
+   - **Additional packages: leave empty.** `00-base.sh`'s pacman list
+     covers everything; preinstalling here risks version conflict noise.
+   - **Network: NetworkManager** (the same stack `00-base.sh` manages).
+   - **Audio: pipewire** (`00-base.sh` installs pipewire + wireplumber).
+   - **Bootloader: limine.** The AppArmor first-boot TODO and the NVIDIA
+     cmdline notes are written against editing your Limine entry.
+     systemd-boot/GRUB work too — translate those notes yourself if you
+     pick them.
+   - **Partitioning: your call** (best-effort default on btrfs or ext4
+     is fine; nothing in the scripts cares).
+   - **A regular user with sudo.** `00-base.sh` REFUSES to run as root.
+   - Timezone/locale/keyboard: yours.
+4. Reboot into the installed system and log in as that user.
+
+The minimal profile doesn't seed `git`, and you need it to clone this
+repo — first commands on the installed system:
+
+```bash
+sudo pacman -Syu
+sudo pacman -S git
+git clone https://github.com/Fatmanams/Hyprland-Fat-rice-.git
+cd Hyprland-Fat-rice-
+```
+
+You are now at step 1 of "Installation steps" below.
+
+---
+
 ## Installation steps
 
 Run the staged scripts in order. **Read each one before running.** None
