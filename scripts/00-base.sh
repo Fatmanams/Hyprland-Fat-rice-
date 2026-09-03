@@ -14,7 +14,8 @@
 #      NOT wire LSP today; the servers cost it nothing by being there.
 #      The HTML/CSS/JSON/ESLint servers are AUR-only
 #      (vscode-langservers-extracted) and are built by 10-aur.sh.
-#   5. Post-install setup: xdg user dirs, bluetooth.service, ufw baseline.
+#   5. Post-install setup: xdg user dirs, bluetooth.service, ufw baseline,
+#      ClamAV freshclam (antivirus signature autoupdate).
 #   6. GPU driver layer — NVIDIA proprietary or Intel/AMD Mesa.
 #   7. Optional: sets the CPU governor to `performance` via cpupower
 #      (desktop gaming rig tradeoff — see the block's own comment).
@@ -95,6 +96,7 @@ sudo pacman -S --needed --noconfirm \
     bitwarden \
     bluez bluez-utils blueman \
     ufw \
+    clamav apparmor firejail \
     kde-cli-tools
 
 echo "==> [4/8] Language servers (shared by Zed and Emacs/eglot)"
@@ -150,6 +152,19 @@ sudo ufw --force enable
 # comes back after reboot only if ufw.service is enabled (ArchWiki).
 sudo systemctl enable --now ufw.service
 echo "    ufw active and enabled at boot: deny incoming, allow outgoing."
+
+# ClamAV: only the signature updater is enabled (unit name verified
+# against the clamav package file list). Scanning itself is on-demand
+# (`clamscan <path>`); the resident daemon (clamav-daemon.service) stays
+# off until you opt in — most desktops don't need it running.
+sudo systemctl enable --now clamav-freshclam.service
+echo "    clamav-freshclam.service enabled: virus DB keeps itself current."
+
+# NOTE: apparmor (installed above) is deliberately NOT activated here.
+# It needs `lsm=landlock,lockdown,yama,integrity,apparmor,bpf` on the
+# kernel cmdline first — that's a hand-edit of YOUR bootloader entry
+# (README -> Mandatory first-boot TODOs), same philosophy as the
+# monitor=/wallpaper stopgaps: this script never touches boot config.
 
 echo "==> [6/8] GPU driver layer (NVIDIA or Intel/AMD — pick one)"
 GPU_CHOSEN=0

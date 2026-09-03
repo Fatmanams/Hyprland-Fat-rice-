@@ -98,7 +98,8 @@ Every AUR-only build goes through `scripts/10-aur.sh`'s `build_one()`.
 ├── .gitattributes               forces LF on all text files (target is Linux)
 ├── scripts/
 │   ├── 00-base.sh             official-repo install + makepkg.conf + GPU driver pick
-│   │                          (+ xdg-user-dirs-update, bluetooth.service, ufw baseline)
+│   │                          (+ xdg-user-dirs-update, bluetooth.service, ufw baseline,
+│   │                          clamav-freshclam; apparmor installed but inert — README TODO #4)
 │   ├── 10-aur.sh              reviewed-PKGBUILD makepkg + repo-add pipeline
 │   ├── 20-sddm.sh             sddm-astronaut-theme bare clone + rollback snapshot
 │   ├── 30-dotfiles.sh         installs config/ into ~/.config with backup

@@ -43,6 +43,9 @@ exactly. No AUR helpers (paru/yay), no `curl | bash` installers.
 | Password manager | bitwarden            | pacman (extra)          | SUPER+V; org.freedesktop.secrets covered by gnome-keyring (already installed) |
 | Bluetooth        | bluez bluez-utils blueman | pacman (extra)     | bluetooth.service enabled by 00-base.sh; blueman-applet autostarts into waybar's tray |
 | Firewall         | ufw                  | pacman (extra)          | default deny incoming / allow outgoing, enabled by 00-base.sh |
+| Antivirus        | clamav               | pacman (extra)          | on-demand `clamscan`; clamav-freshclam.service (enabled by 00-base.sh) keeps the signature DB current |
+| MAC / shields    | apparmor             | pacman (extra)          | LSM mandatory access control; inert until the kernel cmdline opt-in — first-boot TODO #4 |
+| Per-app sandbox  | firejail             | pacman (extra)          | wrap a single app: `firejail <cmd>`; profiles in /etc/firejail |
 
 
 ---
@@ -201,9 +204,11 @@ chmod +x scripts/*.sh
 #    MAKEFLAGS=-j$(nproc) and ccache in BUILDENV, enables [multilib],
 #    runs xdg-user-dirs-update (so ~/Pictures etc. exist — VLC's
 #    default snapshot dir is the Pictures dir), enables
-#    bluetooth.service, and sets up the ufw firewall baseline
-#    (deny incoming / allow outgoing). Also installs the language-server
-#    stack (Zed + Emacs/eglot use it).
+#    bluetooth.service, sets up the ufw firewall baseline
+#    (deny incoming / allow outgoing), and enables ClamAV's freshclam
+#    signature-updater (antivirus DB autoupdate). AppArmor is installed
+#    but requires a hand-edited Limine cmdline — see first-boot TODOs.
+#    Also installs the language-server stack (Zed + Emacs/eglot use it).
 #
 #    Two interactive prompts near the end: the CPU `performance`
 #    governor (cpupower — read the tradeoff comment in the script) and
@@ -276,6 +281,25 @@ Before the rice looks right:
 3. **Same edit in `~/.config/hypr/hyprpaper.conf`** — set the
    `wallpaper = <monitor>, ~/.config/hypr/wallpaper.jpg` line's monitor
    name to match `hyprctl monitors`.
+
+4. **AppArmor (only if you want the "shields" actually on).** The
+   `apparmor` package is installed by `00-base.sh` but the LSM is INERT
+   until the kernel loads it — Arch's stock `lsm=` list doesn't include
+   it. Edit your Limine entry's kernel cmdline and append (order
+   matters; this is the ArchWiki-recommended full list, with apparmor as
+   the first "major" module):
+   ```
+   lsm=landlock,lockdown,yama,integrity,apparmor,bpf
+   ```
+   Then enable profile loading at boot and reboot:
+   ```bash
+   sudo systemctl enable apparmor.service
+   ```
+   Verify after reboot: `cat /sys/kernel/security/lsm` (apparmor in the
+   list), `aa-enabled` → `Yes`, `aa-status` lists loaded profiles. The
+   scripts deliberately do not edit Limine's config for you — same
+   stopgap philosophy as the `monitor=` and `wallpaper.jpg` TODOs
+   above: boot config is yours to edit by hand.
 
 ---
 
