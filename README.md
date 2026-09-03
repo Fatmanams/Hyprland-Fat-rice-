@@ -32,6 +32,8 @@ exactly. No AUR helpers (paru/yay), no `curl | bash` installers.
 | HTML/CSS/JSON LSP | vscode-langservers-extracted | **AUR — makepkg'd** | the only LSP not in official repos |
 | Browser          | brave                | **AUR — brave-bin**     | default; xdg-mime default for http(s)/ftp/html |
 | Media player     | vlc                  | pacman (extra)          | default for video/audio MIME types; ships `config/vlc/vlcrc` (deliberately minimal — decoding and snapshot dir left on VLC's defaults, see file comments) |
+| URL resolver     | yt-dlp               | pacman (extra)          | YouTube et al. -> direct stream URL for vlc-open (SUPER+SHIFT+M); vlc's own youtube.lua is NOT trusted (breaks on every YT player change) |
+| Live resolver    | streamlink           | pacman (extra)          | Twitch/live streams; drives VLC itself via `--player vlc` |
 | TUI file mgr     | yazi                 | pacman (extra)          | SUPER+SHIFT+E |
 | GUI file mgr     | thunar               | pacman (extra)          | SUPER+SHIFT+F; +gvfs +tumbler +thunar-archive-plugin |
 | Display manager  | sddm                 | pacman (extra)          |       |
@@ -400,6 +402,7 @@ Bindings:
 | `SUPER + SHIFT + E`| Open Thunar (was SUPER+E before Zed won it)  |
 | `SUPER + SHIFT + T`| Cycle theme preset (mocha/gruvbox/tokyonight) |
 | `SUPER + V`        | Open Bitwarden                               |
+| `SUPER + SHIFT + M`| Prompt for a URL in rofi, play it in VLC (YouTube etc. resolved by yt-dlp, Twitch by streamlink — see `config/vlc/vlc-open`) |
 
 
 ### Sudoedit / visudo gotcha
@@ -638,6 +641,7 @@ linux-rice/
     │   └── settings.json                   Mocha theme + Nerd font + autosave (~/.config/zed/)
 
     ├── vlc/
+    │   ├── vlc-open                        URL -> resolve (yt-dlp/streamlink) -> play in VLC (SUPER+SHIFT+M)
     │   └── vlcrc                           minimal; defaults left alone (see file comments)
     
     ├── wal/

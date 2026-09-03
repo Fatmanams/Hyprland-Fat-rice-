@@ -127,7 +127,8 @@ Every AUR-only build goes through `scripts/10-aur.sh`'s `build_one()`.
     ├── ghostty/config
     ├── MangoHud/MangoHud.conf
     ├── zed/settings.json       Mocha theme + Nerd font + autosave -> ~/.config/zed/
-    ├── vlc/vlcrc                        minimal; decoding + snapshot dir left on VLC's defaults
+    ├── vlc/vlc-open                 resolve-then-play URL wrapper (yt-dlp / streamlink -> VLC; SUPER+SHIFT+M)
+    ├── vlc/vlcrc                    minimal; decoding + snapshot dir left on VLC's defaults
     ├── wal/templates/colors-rofi.rasi   custom pywal user template -> ~/.cache/wal/colors-rofi.rasi
     ├── wal/templates/colors.el          custom pywal user template -> ~/.cache/wal/colors.el (emacs)
     └── applications/

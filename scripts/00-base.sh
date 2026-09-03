@@ -93,6 +93,7 @@ sudo pacman -S --needed --noconfirm \
     poppler \
     yazi thunar tumbler thunar-archive-plugin thunar-volman gvfs \
     vlc \
+    yt-dlp streamlink \
     bitwarden \
     bluez bluez-utils blueman \
     ufw \
