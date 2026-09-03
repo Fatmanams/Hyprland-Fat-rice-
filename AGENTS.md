@@ -110,7 +110,7 @@ Every AUR-only build goes through `scripts/10-aur.sh`'s `build_one()`.
     │   ├── hyprpaper.conf      static wallpaper FALLBACK config (mpvpaper is the default)
     │   ├── hypridle.conf       idle / lock / suspend listeners
     │   ├── switch-theme.sh     preset palette switcher (SUPER+SHIFT+T cycles)
-    │   ├── themes/{mocha,gruvbox,tokyonight}/   pre-generated pywal-format palettes
+    │   ├── themes/{mocha,gruvbox,tokyonight,osaka-jade}/   pre-generated pywal-format palettes
     │   │                        (each carries ALL 5 formats: waybar.css, rofi.rasi,
     │   │                         wal.vim, colors.el, colors.sh)
     │   └── gpu-env.sh          NVIDIA/Intel/AMD auto-detect env shim (source from shell rc)
@@ -217,7 +217,7 @@ coverage if it isn't already (CI catches it otherwise).
 | Change notification behavior                  | `config/swaync/config.json` + `config/swaync/style.css`      |
 | Change status bar layout                      | `config/waybar/config` + `config/waybar/style.css`           |
 | Change the wallpaper (user-side, post-install) | static: drop image at `~/.config/hypr/wallpaper.jpg`, run `wal -i`; animated: drop video at `~/.config/hypr/wallpaper.mp4` (mpvpaper) — NOT repo edits |
-| Change the color theme (no wallpaper)          | SUPER+SHIFT+T or `~/.config/hypr/switch-theme.sh <mocha\|gruvbox\|tokyonight>`; presets live in `config/hypr/themes/` |
+| Change the color theme (no wallpaper)          | SUPER+SHIFT+T or `~/.config/hypr/switch-theme.sh <mocha\|gruvbox\|tokyonight\|osaka-jade>`; presets live in `config/hypr/themes/` |
 
 ---
 
@@ -255,7 +255,8 @@ Color theming is **pywal16-driven, single source of truth**. The flow:
    Tree section. **Do not silently edit ghostty's color palette** to
    match the other components without addressing this TODO properly.
 7. Preset themes (used when no wallpaper is set): `config/hypr/themes/`
-   ships `mocha` / `gruvbox` / `tokyonight` as pre-generated copies of
+   ships `mocha` / `gruvbox` / `tokyonight` / `osaka-jade` (values ported
+   from omarchy upstream) as pre-generated copies of
    pywal's own output files; `config/hypr/switch-theme.sh` (SUPER+SHIFT+T
    cycles) copies them into `~/.cache/wal/` and records the choice in
    `~/.cache/wal/current-theme`. Rules: presets are applied ONLY via the

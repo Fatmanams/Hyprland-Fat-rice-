@@ -41,7 +41,7 @@ exactly. No AUR helpers (paru/yay), no `curl | bash` installers.
 | GTK theming GUI  | nwg-look             | pacman (extra)          |       |
 | Qt theming       | kvantum / kvantum-qt5 | pacman (extra)         |       |
 | Gaming           | gamemode mangohud lib32-mangohud steam | pacman (extra/multilib) | steam installed by 00-base.sh (multilib) |
-| Themes           | presets + switcher   | shipped files           | wallpaper (pywal) default; mocha/gruvbox/tokyonight presets, SUPER+SHIFT+T cycles |
+| Themes           | presets + switcher   | shipped files           | wallpaper (pywal) default; mocha/gruvbox/tokyonight/osaka-jade presets, SUPER+SHIFT+T cycles |
 | Password manager | bitwarden            | pacman (extra)          | SUPER+V; org.freedesktop.secrets covered by gnome-keyring (already installed) |
 | Bluetooth        | bluez bluez-utils blueman | pacman (extra)     | bluetooth.service enabled by 00-base.sh; blueman-applet autostarts into waybar's tray |
 | Firewall         | ufw                  | pacman (extra)          | default deny incoming / allow outgoing, enabled by 00-base.sh |
@@ -86,23 +86,25 @@ repos** — these are installed by `scripts/00-base.sh`, **not** built:
 
 ---
 
-## Themes (wallpaper mode + 3 presets)
+## Themes (wallpaper mode + 4 presets)
 
 The default look is **wallpaper mode**: `wal -i` generates the palette
 from `~/.config/hypr/wallpaper.jpg` (see first-boot TODOs). Without a
-wallpaper the rice uses one of three shipped static presets —
-**Catppuccin Mocha** (default), **Gruvbox Dark**, **Tokyo Night** —
-all pre-generated in pywal's own file formats under
-`config/hypr/themes/`, so every themed component (waybar, swaync,
-rofi, eww, wlogout, nvim, emacs) picks them up unchanged. Each preset
-dir carries all five formats the rice consumes — `colors-waybar.css`,
-`colors-rofi.rasi`, `colors-wal.vim`, `colors.el`, `colors.sh`.
+wallpaper the rice uses one of four shipped static presets —
+**Catppuccin Mocha** (default), **Gruvbox Dark**, **Tokyo Night**,
+**Osaka Jade** (values ported from omarchy's upstream
+`themes/osaka-jade/colors.toml`) — all pre-generated in pywal's own
+file formats under `config/hypr/themes/`, so every themed component
+(waybar, swaync, rofi, eww, wlogout, nvim, emacs) picks them up
+unchanged. Each preset dir carries all five formats the rice consumes —
+`colors-waybar.css`, `colors-rofi.rasi`, `colors-wal.vim`, `colors.el`,
+`colors.sh`.
 
 Switching:
 
 | How                                          | Effect                                        |
 |----------------------------------------------|-----------------------------------------------|
-| `SUPER + SHIFT + T`                          | cycle mocha -> gruvbox -> tokyonight         |
+| `SUPER + SHIFT + T`                          | cycle mocha -> gruvbox -> tokyonight -> osaka-jade |
 | `~/.config/hypr/switch-theme.sh <name>`      | apply a specific preset                        |
 | `wal -i ~/.config/hypr/wallpaper.jpg`        | back to wallpaper mode (always wins)           |
 
@@ -413,7 +415,7 @@ Bindings:
 |-------------------|----------------------------------------------|
 | `SUPER + E`        | Open Zed                                     |
 | `SUPER + SHIFT + E`| Open Thunar (was SUPER+E before Zed won it)  |
-| `SUPER + SHIFT + T`| Cycle theme preset (mocha/gruvbox/tokyonight) |
+| `SUPER + SHIFT + T`| Cycle theme preset (mocha/gruvbox/tokyonight/osaka-jade) |
 | `SUPER + V`        | Open Bitwarden                               |
 | `SUPER + SHIFT + M`| Prompt for a URL in rofi, play it in VLC (YouTube etc. resolved by yt-dlp, Twitch by streamlink — see `config/vlc/vlc-open`) |
 | `F2` (in nvim/emacs) | Toggle fats mode <-> supermode (insert-forever readline style vs. modal/motion); statusbar/mode-line shows the active mode |
@@ -627,7 +629,7 @@ linux-rice/
     │   ├── hypridle.conf                   idle / lock / suspend listeners
     │   ├── keybinds-extra.conf             empty by default; user-local bind additions
     │   ├── switch-theme.sh                 preset palette switcher (SUPER+SHIFT+T cycles)
-    │   ├── themes/{mocha,gruvbox,tokyonight}/  pre-generated pywal-format palettes
+    │   ├── themes/{mocha,gruvbox,tokyonight,osaka-jade}/  pre-generated pywal-format palettes
     │   └── gpu-env.sh                      NVIDIA/Intel/AMD auto-detect env vars (source from shell rc)
     ├── nvim/
     │   └── init.lua                         single-file nvim config; pywal-driven, no plugins
