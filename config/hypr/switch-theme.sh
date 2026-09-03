@@ -10,11 +10,11 @@
 # Each preset dir MUST carry every pywal output format the rice consumes
 # (colors-waybar.css, colors-rofi.rasi, colors-wal.vim, colors.el,
 # colors.sh) — see AGENTS.md's palette contract. Adding a consumer that
-# reads a new format means adding that file to all three presets AND to
+# reads a new format means adding that file to every preset AND to
 # the cp below, or theme switching leaves it on a stale palette.
 #
 # Usage:
-#   switch-theme.sh <name>   apply a preset: mocha | gruvbox | tokyonight
+#   switch-theme.sh <name>   apply a preset: mocha | gruvbox | tokyonight | osaka-jade
 #   switch-theme.sh cycle    step to the next preset (SUPER+SHIFT+T bind)
 #   switch-theme.sh current  print the active mode
 #
@@ -24,7 +24,7 @@
 
 set -euo pipefail
 
-THEMES=(mocha gruvbox tokyonight)
+THEMES=(mocha gruvbox tokyonight osaka-jade)
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 THEME_SRC="$SCRIPT_DIR/themes"
 WAL_DIR="$HOME/.cache/wal"

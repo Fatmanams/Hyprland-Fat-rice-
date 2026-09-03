@@ -98,7 +98,8 @@ Every AUR-only build goes through `scripts/10-aur.sh`'s `build_one()`.
 ├── .gitattributes               forces LF on all text files (target is Linux)
 ├── scripts/
 │   ├── 00-base.sh             official-repo install + makepkg.conf + GPU driver pick
-│   │                          (+ xdg-user-dirs-update, bluetooth.service, ufw baseline)
+│   │                          (+ xdg-user-dirs-update, bluetooth.service, ufw baseline,
+│   │                          clamav-freshclam; apparmor installed but inert — README TODO #4)
 │   ├── 10-aur.sh              reviewed-PKGBUILD makepkg + repo-add pipeline
 │   ├── 20-sddm.sh             sddm-astronaut-theme bare clone + rollback snapshot
 │   ├── 30-dotfiles.sh         installs config/ into ~/.config with backup
@@ -109,7 +110,7 @@ Every AUR-only build goes through `scripts/10-aur.sh`'s `build_one()`.
     │   ├── hyprpaper.conf      static wallpaper FALLBACK config (mpvpaper is the default)
     │   ├── hypridle.conf       idle / lock / suspend listeners
     │   ├── switch-theme.sh     preset palette switcher (SUPER+SHIFT+T cycles)
-    │   ├── themes/{mocha,gruvbox,tokyonight}/   pre-generated pywal-format palettes
+    │   ├── themes/{mocha,gruvbox,tokyonight,osaka-jade}/   pre-generated pywal-format palettes
     │   │                        (each carries ALL 5 formats: waybar.css, rofi.rasi,
     │   │                         wal.vim, colors.el, colors.sh)
     │   └── gpu-env.sh          NVIDIA/Intel/AMD auto-detect env shim (source from shell rc)
@@ -126,7 +127,8 @@ Every AUR-only build goes through `scripts/10-aur.sh`'s `build_one()`.
     ├── ghostty/config
     ├── MangoHud/MangoHud.conf
     ├── zed/settings.json       Mocha theme + Nerd font + autosave -> ~/.config/zed/
-    ├── vlc/vlcrc                        minimal; decoding + snapshot dir left on VLC's defaults
+    ├── vlc/vlc-open                 resolve-then-play URL wrapper (yt-dlp / streamlink -> VLC; SUPER+SHIFT+M)
+    ├── vlc/vlcrc                    minimal; decoding + snapshot dir left on VLC's defaults
     ├── wal/templates/colors-rofi.rasi   custom pywal user template -> ~/.cache/wal/colors-rofi.rasi
     ├── wal/templates/colors.el          custom pywal user template -> ~/.cache/wal/colors.el (emacs)
     └── applications/
@@ -215,7 +217,7 @@ coverage if it isn't already (CI catches it otherwise).
 | Change notification behavior                  | `config/swaync/config.json` + `config/swaync/style.css`      |
 | Change status bar layout                      | `config/waybar/config` + `config/waybar/style.css`           |
 | Change the wallpaper (user-side, post-install) | static: drop image at `~/.config/hypr/wallpaper.jpg`, run `wal -i`; animated: drop video at `~/.config/hypr/wallpaper.mp4` (mpvpaper) — NOT repo edits |
-| Change the color theme (no wallpaper)          | SUPER+SHIFT+T or `~/.config/hypr/switch-theme.sh <mocha\|gruvbox\|tokyonight>`; presets live in `config/hypr/themes/` |
+| Change the color theme (no wallpaper)          | SUPER+SHIFT+T or `~/.config/hypr/switch-theme.sh <mocha\|gruvbox\|tokyonight\|osaka-jade>`; presets live in `config/hypr/themes/` |
 
 ---
 
@@ -253,7 +255,8 @@ Color theming is **pywal16-driven, single source of truth**. The flow:
    Tree section. **Do not silently edit ghostty's color palette** to
    match the other components without addressing this TODO properly.
 7. Preset themes (used when no wallpaper is set): `config/hypr/themes/`
-   ships `mocha` / `gruvbox` / `tokyonight` as pre-generated copies of
+   ships `mocha` / `gruvbox` / `tokyonight` / `osaka-jade` (values ported
+   from omarchy upstream) as pre-generated copies of
    pywal's own output files; `config/hypr/switch-theme.sh` (SUPER+SHIFT+T
    cycles) copies them into `~/.cache/wal/` and records the choice in
    `~/.cache/wal/current-theme`. Rules: presets are applied ONLY via the

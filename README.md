@@ -32,6 +32,8 @@ exactly. No AUR helpers (paru/yay), no `curl | bash` installers.
 | HTML/CSS/JSON LSP | vscode-langservers-extracted | **AUR — makepkg'd** | the only LSP not in official repos |
 | Browser          | brave                | **AUR — brave-bin**     | default; xdg-mime default for http(s)/ftp/html |
 | Media player     | vlc                  | pacman (extra)          | default for video/audio MIME types; ships `config/vlc/vlcrc` (deliberately minimal — decoding and snapshot dir left on VLC's defaults, see file comments) |
+| URL resolver     | yt-dlp               | pacman (extra)          | YouTube et al. -> direct stream URL for vlc-open (SUPER+SHIFT+M); vlc's own youtube.lua is NOT trusted (breaks on every YT player change) |
+| Live resolver    | streamlink           | pacman (extra)          | Twitch/live streams; drives VLC itself via `--player vlc` |
 | TUI file mgr     | yazi                 | pacman (extra)          | SUPER+SHIFT+E |
 | GUI file mgr     | thunar               | pacman (extra)          | SUPER+SHIFT+F; +gvfs +tumbler +thunar-archive-plugin |
 | Display manager  | sddm                 | pacman (extra)          |       |
@@ -39,10 +41,13 @@ exactly. No AUR helpers (paru/yay), no `curl | bash` installers.
 | GTK theming GUI  | nwg-look             | pacman (extra)          |       |
 | Qt theming       | kvantum / kvantum-qt5 | pacman (extra)         |       |
 | Gaming           | gamemode mangohud lib32-mangohud steam | pacman (extra/multilib) | steam installed by 00-base.sh (multilib) |
-| Themes           | presets + switcher   | shipped files           | wallpaper (pywal) default; mocha/gruvbox/tokyonight presets, SUPER+SHIFT+T cycles |
+| Themes           | presets + switcher   | shipped files           | wallpaper (pywal) default; mocha/gruvbox/tokyonight/osaka-jade presets, SUPER+SHIFT+T cycles |
 | Password manager | bitwarden            | pacman (extra)          | SUPER+V; org.freedesktop.secrets covered by gnome-keyring (already installed) |
 | Bluetooth        | bluez bluez-utils blueman | pacman (extra)     | bluetooth.service enabled by 00-base.sh; blueman-applet autostarts into waybar's tray |
 | Firewall         | ufw                  | pacman (extra)          | default deny incoming / allow outgoing, enabled by 00-base.sh |
+| Antivirus        | clamav               | pacman (extra)          | on-demand `clamscan`; clamav-freshclam.service (enabled by 00-base.sh) keeps the signature DB current |
+| MAC / shields    | apparmor             | pacman (extra)          | LSM mandatory access control; inert until the kernel cmdline opt-in — first-boot TODO #4 |
+| Per-app sandbox  | firejail             | pacman (extra)          | wrap a single app: `firejail <cmd>`; profiles in /etc/firejail |
 
 
 ---
@@ -81,23 +86,25 @@ repos** — these are installed by `scripts/00-base.sh`, **not** built:
 
 ---
 
-## Themes (wallpaper mode + 3 presets)
+## Themes (wallpaper mode + 4 presets)
 
 The default look is **wallpaper mode**: `wal -i` generates the palette
 from `~/.config/hypr/wallpaper.jpg` (see first-boot TODOs). Without a
-wallpaper the rice uses one of three shipped static presets —
-**Catppuccin Mocha** (default), **Gruvbox Dark**, **Tokyo Night** —
-all pre-generated in pywal's own file formats under
-`config/hypr/themes/`, so every themed component (waybar, swaync,
-rofi, eww, wlogout, nvim, emacs) picks them up unchanged. Each preset
-dir carries all five formats the rice consumes — `colors-waybar.css`,
-`colors-rofi.rasi`, `colors-wal.vim`, `colors.el`, `colors.sh`.
+wallpaper the rice uses one of four shipped static presets —
+**Catppuccin Mocha** (default), **Gruvbox Dark**, **Tokyo Night**,
+**Osaka Jade** (values ported from omarchy's upstream
+`themes/osaka-jade/colors.toml`) — all pre-generated in pywal's own
+file formats under `config/hypr/themes/`, so every themed component
+(waybar, swaync, rofi, eww, wlogout, nvim, emacs) picks them up
+unchanged. Each preset dir carries all five formats the rice consumes —
+`colors-waybar.css`, `colors-rofi.rasi`, `colors-wal.vim`, `colors.el`,
+`colors.sh`.
 
 Switching:
 
 | How                                          | Effect                                        |
 |----------------------------------------------|-----------------------------------------------|
-| `SUPER + SHIFT + T`                          | cycle mocha -> gruvbox -> tokyonight         |
+| `SUPER + SHIFT + T`                          | cycle mocha -> gruvbox -> tokyonight -> osaka-jade |
 | `~/.config/hypr/switch-theme.sh <name>`      | apply a specific preset                        |
 | `wal -i ~/.config/hypr/wallpaper.jpg`        | back to wallpaper mode (always wins)           |
 
@@ -188,6 +195,48 @@ Two layers:
 
 ---
 
+## Step 0: installing Arch itself (archinstall, from the ISO)
+
+The scripts in `scripts/` run on an ALREADY-INSTALLED Arch system. If
+the box in front of you is still the live ISO, this is how you get from
+there to here. Everything in this section runs on the ISO, as root.
+
+1. Get online on the ISO. Ethernet just works; WiFi via `iwctl`
+   (`station wlan0 connect "SSID"`).
+2. Launch the guided installer: `archinstall`
+3. The picks in archinstall that matter because this repo's scripts
+   assume them downstream:
+   - **Profile: minimal.** No desktop profile — Hyprland and everything
+     else come from `scripts/00-base.sh`. Picking a desktop profile here
+     means a whole DE left installed alongside the rice.
+   - **Additional packages: leave empty.** `00-base.sh`'s pacman list
+     covers everything; preinstalling here risks version conflict noise.
+   - **Network: NetworkManager** (the same stack `00-base.sh` manages).
+   - **Audio: pipewire** (`00-base.sh` installs pipewire + wireplumber).
+   - **Bootloader: limine.** The AppArmor first-boot TODO and the NVIDIA
+     cmdline notes are written against editing your Limine entry.
+     systemd-boot/GRUB work too — translate those notes yourself if you
+     pick them.
+   - **Partitioning: your call** (best-effort default on btrfs or ext4
+     is fine; nothing in the scripts cares).
+   - **A regular user with sudo.** `00-base.sh` REFUSES to run as root.
+   - Timezone/locale/keyboard: yours.
+4. Reboot into the installed system and log in as that user.
+
+The minimal profile doesn't seed `git`, and you need it to clone this
+repo — first commands on the installed system:
+
+```bash
+sudo pacman -Syu
+sudo pacman -S git
+git clone https://github.com/Fatmanams/Hyprland-Fat-rice-.git
+cd Hyprland-Fat-rice-
+```
+
+You are now at step 1 of "Installation steps" below.
+
+---
+
 ## Installation steps
 
 Run the staged scripts in order. **Read each one before running.** None
@@ -201,9 +250,11 @@ chmod +x scripts/*.sh
 #    MAKEFLAGS=-j$(nproc) and ccache in BUILDENV, enables [multilib],
 #    runs xdg-user-dirs-update (so ~/Pictures etc. exist — VLC's
 #    default snapshot dir is the Pictures dir), enables
-#    bluetooth.service, and sets up the ufw firewall baseline
-#    (deny incoming / allow outgoing). Also installs the language-server
-#    stack (Zed + Emacs/eglot use it).
+#    bluetooth.service, sets up the ufw firewall baseline
+#    (deny incoming / allow outgoing), and enables ClamAV's freshclam
+#    signature-updater (antivirus DB autoupdate). AppArmor is installed
+#    but requires a hand-edited Limine cmdline — see first-boot TODOs.
+#    Also installs the language-server stack (Zed + Emacs/eglot use it).
 #
 #    Two interactive prompts near the end: the CPU `performance`
 #    governor (cpupower — read the tradeoff comment in the script) and
@@ -277,6 +328,25 @@ Before the rice looks right:
    `wallpaper = <monitor>, ~/.config/hypr/wallpaper.jpg` line's monitor
    name to match `hyprctl monitors`.
 
+4. **AppArmor (only if you want the "shields" actually on).** The
+   `apparmor` package is installed by `00-base.sh` but the LSM is INERT
+   until the kernel loads it — Arch's stock `lsm=` list doesn't include
+   it. Edit your Limine entry's kernel cmdline and append (order
+   matters; this is the ArchWiki-recommended full list, with apparmor as
+   the first "major" module):
+   ```
+   lsm=landlock,lockdown,yama,integrity,apparmor,bpf
+   ```
+   Then enable profile loading at boot and reboot:
+   ```bash
+   sudo systemctl enable apparmor.service
+   ```
+   Verify after reboot: `cat /sys/kernel/security/lsm` (apparmor in the
+   list), `aa-enabled` → `Yes`, `aa-status` lists loaded profiles. The
+   scripts deliberately do not edit Limine's config for you — same
+   stopgap philosophy as the `monitor=` and `wallpaper.jpg` TODOs
+   above: boot config is yours to edit by hand.
+
 ---
 
 ## Rolling back if SDDM crashes
@@ -338,6 +408,12 @@ Use it for terminal-side edits where you want syntax-aware highlighting
 without popping a GUI window: script hacks, dockerfile edits, quick
 patches. It's not your IDE — Zed is.
 
+F2 toggles two editing personalities in nvim: **supermode** (the default —
+plain modal vim) and **fats mode** (nvim stays in Insert permanently;
+`Ctrl-O` is one-shot Normal, `Ctrl-S` saves, `Ctrl-Z` undoes, and
+Ctrl-C/Ctrl-V work via the system clipboard). The active mode shows in
+the statusline as `FATS`/`SUPER`.
+
 **Emacs** is **opt-in** — `00-base.sh`'s last step prompts for it and
 defaults to no. If you accept, it installs `emacs-wayland` (the PGTK
 build, which talks Wayland natively instead of going through XWayland;
@@ -359,6 +435,13 @@ SPC-leader scheme, which would shadow self-insert here):
 `C-c w` save, `C-c q` kill buffer, `C-c e` dired-jump, `C-c b` switch
 buffer, `C-c n` toggle line numbers.
 
+F2 mirrors nvim's modes with two hand-rolled minor modes (no packages,
+same as the rest of this file): **supermode** (the startup default — a
+minimal vim-ish motion layer: `h/j/k/l`, `w`/`b` word motion, `i` drops
+into a self-inserting phase, `<escape>`/`C-g` back to motion) and
+**fats-mode** (stock Emacs feel with `C-s` save, `C-z` undo, `C-a`
+select-all). The mode line shows `SUPER` / `super/insert` / `FATS`.
+
 If `~/.emacs.d` already exists on your box, Emacs ignores
 `~/.config/emacs/` entirely (XDG precedence rules) — move the old dir
 aside for this config to take effect.
@@ -374,8 +457,10 @@ Bindings:
 |-------------------|----------------------------------------------|
 | `SUPER + E`        | Open Zed                                     |
 | `SUPER + SHIFT + E`| Open Thunar (was SUPER+E before Zed won it)  |
-| `SUPER + SHIFT + T`| Cycle theme preset (mocha/gruvbox/tokyonight) |
+| `SUPER + SHIFT + T`| Cycle theme preset (mocha/gruvbox/tokyonight/osaka-jade) |
 | `SUPER + V`        | Open Bitwarden                               |
+| `SUPER + SHIFT + M`| Prompt for a URL in rofi, play it in VLC (YouTube etc. resolved by yt-dlp, Twitch by streamlink — see `config/vlc/vlc-open`) |
+| `F2` (in nvim/emacs) | Toggle fats mode <-> supermode (insert-forever readline style vs. modal/motion); statusbar/mode-line shows the active mode |
 
 
 ### Sudoedit / visudo gotcha
@@ -586,7 +671,7 @@ linux-rice/
     │   ├── hypridle.conf                   idle / lock / suspend listeners
     │   ├── keybinds-extra.conf             empty by default; user-local bind additions
     │   ├── switch-theme.sh                 preset palette switcher (SUPER+SHIFT+T cycles)
-    │   ├── themes/{mocha,gruvbox,tokyonight}/  pre-generated pywal-format palettes
+    │   ├── themes/{mocha,gruvbox,tokyonight,osaka-jade}/  pre-generated pywal-format palettes
     │   └── gpu-env.sh                      NVIDIA/Intel/AMD auto-detect env vars (source from shell rc)
     ├── nvim/
     │   └── init.lua                         single-file nvim config; pywal-driven, no plugins
@@ -614,6 +699,7 @@ linux-rice/
     │   └── settings.json                   Mocha theme + Nerd font + autosave (~/.config/zed/)
 
     ├── vlc/
+    │   ├── vlc-open                        URL -> resolve (yt-dlp/streamlink) -> play in VLC (SUPER+SHIFT+M)
     │   └── vlcrc                           minimal; defaults left alone (see file comments)
     
     ├── wal/
