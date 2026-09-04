@@ -30,7 +30,7 @@ exactly. No AUR helpers (paru/yay), no `curl | bash` installers.
 | Alt editor       | emacs-wayland        | pacman (extra)          | **opt-in** (00-base.sh prompts); PGTK/native-Wayland build; pywal-driven, no package manager, LSP via built-in eglot |
 | Language servers | pyright rust-analyzer clang lua-language-server bash-language-server gopls typescript-language-server | pacman (extra) | plain `$PATH` binaries; used by Zed + Emacs/eglot |
 | HTML/CSS/JSON LSP | vscode-langservers-extracted | **AUR — makepkg'd** | the only LSP not in official repos |
-| Browser          | brave                | **AUR — brave-bin**     | default; xdg-mime default for http(s)/ftp/html |
+| Browser          | helium-browser       | **AUR — helium-browser-bin** | default; xdg-mime default for http(s)/ftp/html |
 | Media player     | vlc                  | pacman (extra)          | default for video/audio MIME types; ships `config/vlc/vlcrc` (deliberately minimal — decoding and snapshot dir left on VLC's defaults, see file comments) |
 | URL resolver     | yt-dlp               | pacman (extra)          | YouTube et al. -> direct stream URL for vlc-open (SUPER+SHIFT+M); vlc's own youtube.lua is NOT trusted (breaks on every YT player change) |
 | Live resolver    | streamlink           | pacman (extra)          | Twitch/live streams; drives VLC itself via `--player vlc` |
@@ -64,7 +64,7 @@ official Arch repos and installed by `scripts/00-base.sh`.
 | `bibata-cursor-theme`  | `<https://aur.archlinux.org/bibata-cursor-theme.git>` | Cursor theme, has install hooks (systemctl-like) |
 | `wlogout`              | `<https://aur.archlinux.org/wlogout.git>` | Wayland logout menu, GTK3                                         |
 | `zed`                  | `<https://aur.archlinux.org/zed.git>`    | **Review carefully**: large Rust project, many cargo crates, may pull release assets during build |
-| `brave-bin`            | `<https://aur.archlinux.org/brave-bin.git>` | Precompiled Brave in .deb form, repackaged to .pkg.tar.zst. Downloads from Brave's signed CDN (NOT curl\|bash). Read the PKGBUILD anyway. |
+| `helium-browser-bin`   | `<https://aur.archlinux.org/helium-browser-bin.git>` | Precompiled Helium (imputnet chromium fork), repackaged from the upstream release tarball — verified WITH its `.asc` via `validpgpkeys` (Helium signing key), plus two sha256-pinned local patches. No build(), no hooks, no curl\|bash. |
 | `mpvpaper`             | `<https://aur.archlinux.org/mpvpaper.git>` | Video wallpaper daemon (v1.9). Pinned GitHub release tarball with b2sum, meson/ninja build, deps libmpv + libwayland (mpv auto-pulled by makepkg -s), optdep socat. No install hooks, no curl\|bash, no red flags. |
 | `vscode-langservers-extracted` | `<https://aur.archlinux.org/vscode-langservers-extracted.git>` | HTML/CSS/JSON/ESLint language servers (v4.10.0), used by Zed and Emacs' eglot. Source is the upstream npm registry tarball pinned with a sha256sum; `package()` is `npm i -g` into `$pkgdir` with the npm cache confined to `$srcdir`, plus chown + license install. No `build()`, no install hooks, no curl\|bash. It vendors node_modules — inherent to the npm tarball, not added by the PKGBUILD. |
 
