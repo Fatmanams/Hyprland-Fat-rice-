@@ -36,9 +36,15 @@ else
 fi
 
 echo "==> [2/7] GPU driver sanity"
-# Same lspci detection 00-base.sh used at install time; cross-checked
-# against installed packages so a half-finished driver swap is caught.
-gpu_line=$(lspci -nn | grep -Ei ' VGA compatible controller: ' || true)
+# Same lspci detection 00-base.sh uses at install time, INCLUDING the
+# head -n1 (first VGA controller only) — so on hybrid/Optimus systems
+# verify and install always agree on which controller counts.
+# Cross-checked against installed packages so a half-finished driver
+# swap is caught. NVIDIA hardware does NOT imply the nvidia package:
+# 00-base.sh's GPU step lets the user decline the proprietary driver
+# and fall through to mesa — a supported outcome, so that combination
+# is a PASS here, not a FAIL.
+gpu_line=$(lspci -nn | grep -Ei ' VGA compatible controller: ' | head -n1 || true)
 if [[ -z "$gpu_line" ]]; then
     fail "no VGA controller detected by lspci"
 else
@@ -46,8 +52,10 @@ else
     if echo "$gpu_line" | grep -qi nvidia; then
         if pacman -Qi nvidia &>/dev/null; then
             pass "NVIDIA GPU detected and nvidia package installed"
+        elif pacman -Qi mesa &>/dev/null; then
+            pass "NVIDIA GPU detected, mesa installed (proprietary driver declined at install)"
         else
-            fail "NVIDIA GPU detected but nvidia package not installed"
+            fail "NVIDIA GPU detected but neither nvidia nor mesa installed"
         fi
     else
         if pacman -Qi mesa &>/dev/null; then
