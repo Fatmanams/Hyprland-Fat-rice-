@@ -103,7 +103,8 @@ Every AUR-only build goes through `scripts/10-aur.sh`'s `build_one()`.
 │   ├── 10-aur.sh              reviewed-PKGBUILD makepkg + repo-add pipeline
 │   ├── 20-sddm.sh             sddm-astronaut-theme bare clone + rollback snapshot
 │   ├── 30-dotfiles.sh         installs config/ into ~/.config with backup
-│   └── 40-gaming.sh           verifies gamemoded + prints Steam launch recipes
+│   ├── 40-gaming.sh           verifies gamemoded + prints Steam launch recipes
+│   └── 50-verify.sh           read-only post-deploy health check (never auto-fixes)
 └── config/
     ├── hypr/
     │   ├── hyprland.conf       compositor config (monitor= is a STOPGAP TODO — see notes)

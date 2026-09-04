@@ -280,6 +280,13 @@ chmod +x scripts/*.sh
 # 5. Gaming extras — verifies gamemoded, prints Steam/prismlauncher
 #    launch-option templates.
 ./scripts/40-gaming.sh
+
+# 6. Post-deploy health check — read-only, reports PASS/FAIL never
+#    auto-fixes: first-boot TODOs cleared, GPU driver matches the
+#    hardware, ufw/clamav-freshclam/bluetooth live, SDDM snapshot on
+#    disk, every theme preset carrying all five pywal formats. Best run
+#    after one Hyprland session has booted.
+./scripts/50-verify.sh
 ```
 
 You can run each script at most once. Reading them first is the point.
@@ -663,7 +670,8 @@ linux-rice/
 │   ├── 10-aur.sh                           reviewed-PKGBUILD builds + repo-add
 │   ├── 20-sddm.sh                          bare git clone + rollback snapshot
 │   ├── 30-dotfiles.sh                      copies config/ into ~/.config (backup first)
-│   └── 40-gaming.sh                        verifies gaming extras + templates
+│   ├── 40-gaming.sh                        verifies gaming extras + templates
+│   └── 50-verify.sh                        read-only post-deploy health check (PASS/FAIL, never fixes)
 └── config/
     ├── hypr/
     │   ├── hyprland.conf                   compositor config (monitor= TODO!)
