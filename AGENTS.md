@@ -124,7 +124,8 @@ Every AUR-only build goes through `scripts/10-aur.sh`'s `build_one()`.
     ├── rofi/config.rasi
     ├── eww/{eww.yuck,eww.scss}
     ├── wlogout/{layout,style.css}
-    ├── ghostty/config
+    ├── ghostty/config            terminal config; includes generated colors.conf
+    ├── ghostty/ghostty-theme.sh  colors.conf writer: wal/preset hook + ghostty reload
     ├── MangoHud/MangoHud.conf
     ├── zed/settings.json       Mocha theme + Nerd font + autosave -> ~/.config/zed/
     ├── vlc/vlc-open                 resolve-then-play URL wrapper (yt-dlp / streamlink -> VLC; SUPER+SHIFT+M)
@@ -249,11 +250,18 @@ Color theming is **pywal16-driven, single source of truth**. The flow:
    (opt-in) does the same with `~/.cache/wal/colors.el`, generated from
    the custom template at `config/wal/templates/colors.el` — same
    fallback, same `config/wal/templates/` install requirement as item 4.
-6. Ghostty is the outlier — its config bakes Catppuccin Mocha because
-   ghostty doesn't `@import` CSS. A post-wal hook that regenerates a
-   ghostty colors.conf from pywal is a documented TODO in `README.md`'s
-   Tree section. **Do not silently edit ghostty's color palette** to
-   match the other components without addressing this TODO properly.
+6. Ghostty can't `@import` CSS — `config/ghostty/ghostty-theme.sh`
+   bridges it: it reads `~/.cache/wal/colors.sh` and writes Ghostty-
+   native `~/.config/ghostty/colors.conf` (background/foreground/
+   palette 0-15 only, `#`-less hex — both forms are valid per the
+   Ghostty config reference). It's included from `config/ghostty/config`
+   via `config-file = ?colors.conf` (`?` suppresses the missing-file
+   error; included files apply AFTER the parent file, so the generated
+   palette wins). The hook fires after `wal -i` in hyprland.conf's
+   exec-once and after the preset copy in switch-theme.sh, then
+   `ghostty +reload-config` iff ghostty is running. The baked Mocha
+   block (incl. selection-*/cursor-color) is the pre-wal fallback —
+   don't delete it.
 7. Preset themes (used when no wallpaper is set): `config/hypr/themes/`
    ships `mocha` / `gruvbox` / `tokyonight` / `osaka-jade` (values ported
    from omarchy upstream) as pre-generated copies of
@@ -265,8 +273,8 @@ Color theming is **pywal16-driven, single source of truth**. The flow:
    adding a preset, keep all five file formats (colors-waybar.css,
    colors-rofi.rasi, colors-wal.vim, colors.el, colors.sh) in sync AND
    listed in `switch-theme.sh`'s `cp -f` — a format missing from either
-   place leaves that consumer on a stale palette after a switch; ghostty
-   and VLC stay unthemed by presets (ghostty per item 6's TODO).
+   place leaves that consumer on a stale palette after a switch; Ghostty
+   follows presets too (item 6's hook); only VLC stays unthemed.
 
 When adding a new themed component, follow the CSS `@import` pattern.
 Don't hardcode hex colors that should match the dynamic palette.

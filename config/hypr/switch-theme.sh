@@ -5,7 +5,8 @@
 # palette contract). Normally pywal16 generates them from the wallpaper
 # (`wal -i`); this script instead applies one of the static presets
 # under themes/ (next to this file), overwriting the same files so
-# waybar / swaync / rofi / eww / wlogout / nvim / emacs all pick them up.
+# waybar / swaync / rofi / eww / wlogout / nvim / emacs pick them up
+# (ghostty picks them up via the ghostty-theme.sh hook, see bottom).
 #
 # Each preset dir MUST carry every pywal output format the rice consumes
 # (colors-waybar.css, colors-rofi.rasi, colors-wal.vim, colors.el,
@@ -19,8 +20,9 @@
 #   switch-theme.sh current  print the active mode
 #
 # Running `wal -i <wallpaper>` switches back to wallpaper mode (it
-# overwrites these files). Ghostty and VLC are NOT rethemed by this
-# script — ghostty bakes its palette (see config/ghostty/config TODO).
+# overwrites these files). VLC is NOT rethemed by this script; Ghostty
+# IS — via the ghostty-theme.sh hook below (regenerates colors.conf
+# from the palette that was just copied in).
 
 set -euo pipefail
 
@@ -45,6 +47,13 @@ apply() {
           "$WAL_DIR/"
     echo "$name" > "$MARKER"
     echo "Theme applied: $name (running 'wal -i' returns to wallpaper mode)"
+
+    # Ghostty can't read wal files — regenerate its colors.conf from the
+    # palette just installed (same hook hyprland.conf's wal exec-once
+    # uses), reloading ghostty if it's running.
+    if [[ -x "$SCRIPT_DIR/../ghostty/ghostty-theme.sh" ]]; then
+        "$SCRIPT_DIR/../ghostty/ghostty-theme.sh" >/dev/null
+    fi
 
     # Reload the components that read colors at startup.
     if command -v waybar >/dev/null 2>&1 && pgrep -x waybar >/dev/null 2>&1; then

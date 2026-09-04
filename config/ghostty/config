@@ -3,13 +3,18 @@
 #
 # Single monitor, AMD/Intel iGPU. No NVIDIA env needed.
 # Font: JetBrainsMono Nerd Font (pacman: ttf-jetbrains-mono-nerd, 00-base.sh).
-# Color palette baked here as Catppuccin Mocha; pywal16 also writes a live
-# palette to ~/.cache/wal/colors.json when it runs, but Ghostty reads its
-# own config file rather than importing CSS — so the dynamic palette
-# doesn't auto-apply. If you want pywal-driven Ghostty colors, write a
-# small post-wal hook that regenerates ~/.config/ghostty/colors.conf and
-# `ghostty +reload-config`s running windows. Left as a TODO in the README.
+# Color palette: pywal-driven via the generated colors.conf next to this
+# file. ghostty-theme.sh (same dir) writes it from ~/.cache/wal/colors.sh
+# — after `wal -i` in wallpaper mode and after every preset switch. The
+# `config-file = ?colors.conf` line below includes it when present; the
+# baked Catppuccin Mocha block at the bottom is the fallback for before
+# the hook's first run. (Ghostty config docs verified: included files are
+# applied AFTER this file, so the generated palette wins when it exists;
+# the `?` prefix suppresses the missing-file error on pre-wal boots.)
 # =============================================================================
+
+# Pull in the wal-generated palette when it exists (see header above).
+config-file = ?colors.conf
 
 # ---- Font ----------------------------------------------------------------
 font-family = JetBrainsMono Nerd Font
