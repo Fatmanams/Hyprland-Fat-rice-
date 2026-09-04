@@ -22,12 +22,12 @@ fi
 
 case "$1" in
     *twitch.tv*)
-        streamlink "$1" best --player vlc
+        streamlink --player vlc -- "$1" best
         ;;
     *)
         # assignment fails loudly under set -e if yt-dlp can't resolve,
         # instead of vlc opening an empty argument.
-        url=$(yt-dlp -g "$1")
+        url=$(yt-dlp -g -- "$1")
         vlc "$url"
         ;;
 esac
