@@ -52,8 +52,9 @@ Scripts run on Arch; do not assume Windows tools exist on the target.
 | `wlogout`              | Wayland logout menu, GTK3.                                         |
 | `zed`                  | Large Rust project. **Review PKGBUILD carefully** — may fetch      |
 |                        | release assets at build time.                                      |
-| `brave-bin`            | Precompiled Brave .deb repackaged; downloads from Brave's signed   |
-|                        | CDN (not curl\|bash). Read the PKGBUILD anyway.                    |
+| `helium-browser-bin`   | Precompiled Helium (imputnet) repackaged from the signed release   |
+|                        | tarball (PGP via validpgpkeys) + sha256-pinned patches. No build,  |
+|                        | no hooks, no curl\|bash.                                            |
 | `mpvpaper`             | Animated wallpaper daemon. Pinned GitHub release tarball + b2sum,  |
 |                        | meson build, deps libmpv/wayland (mpv auto-pulled). No red flags.  |
 | `vscode-langservers-extracted` | HTML/CSS/JSON/ESLint language servers for Zed + Emacs      |
