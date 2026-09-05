@@ -113,8 +113,12 @@ Notes:
 - The selected preset is recorded in `~/.cache/wal/current-theme` and
   reapplied at session start; presets never overwrite wallpaper mode —
   the moment `wallpaper.jpg` exists, `wal -i` takes over again.
-- Ghostty keeps its baked Catppuccin Mocha palette (pywal can't feed
-  it yet — same TODO as before), and VLC isn't themed by presets.
+- Ghostty IS rethemed: `config/ghostty/ghostty-theme.sh` regenerates
+  `~/.config/ghostty/colors.conf` from the live palette in both modes
+  (after `wal -i` and after every preset switch), hot-reloading with
+  `ghostty +reload-config`. The baked Catppuccin Mocha block in
+  ghostty's config stays as the before-first-wal fallback. VLC isn't
+  themed by presets.
 
 ---
 
@@ -453,10 +457,12 @@ If `~/.emacs.d` already exists on your box, Emacs ignores
 `~/.config/emacs/` entirely (XDG precedence rules) — move the old dir
 aside for this config to take effect.
 
-**Ghostty** is the primary terminal. Its config at
-`~/.config/ghostty/config` bakes Catppuccin Mocha as a fallback palette
-(pywal16 doesn't yet write a ghostty-compatible config file; see the
-file header comment for the TODO).
+**Ghostty** is the primary terminal. It follows the live pywal palette
+through `~/.config/ghostty/colors.conf`, generated from
+`~/.cache/wal/colors.sh` by `~/.config/ghostty/ghostty-theme.sh`
+(hooked after `wal -i` and after `switch-theme.sh`; running windows
+reload via `ghostty +reload-config`). The Catppuccin Mocha block baked
+into its config is the fallback for boots before wal has ever run.
 
 Bindings:
 
@@ -700,7 +706,8 @@ linux-rice/
     │   ├── layout                          6 fields: lock/logout/suspend/hibernate/reboot/shutdown
     │   └── style.css                       pywal16 @import colors
     ├── ghostty/
-    │   └── config                          primary terminal, Catppuccin Mocha baked
+    │   ├── config                          primary terminal; includes generated colors.conf
+    │   └── ghostty-theme.sh                regenerates colors.conf from pywal + reloads ghostty
     ├── MangoHud/
     │   └── MangoHud.conf                   gaming HUD config
     ├── zed/
